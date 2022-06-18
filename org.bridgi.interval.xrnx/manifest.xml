@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RenoiseScriptingTool doc_version="0">
+  <ApiVersion>6</ApiVersion>
+  <Id>org.bridgi.interval</Id>
+  <Version>0.01</Version>
+  <Author>Andreas</Author>
+  <Name>Interval Analysis</Name>
+  <Category>Tool Development</Category>
+  <Description>This tool determines intervals between notes and calculates a consonance value</Description>
+  <Homepage>http://scripting.renoise.com</Homepage>
+</RenoiseScriptingTool>
