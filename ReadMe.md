@@ -78,6 +78,11 @@ shown in the third screenshot.
 
 ![Screenshot2](Screenshot2.png)
 
+Another example concerning the calculation of the consonance value, showing an augmented
+triad and the dominant seventh chord:
+
+![Screenshot3](Screenshot3.png)
+
 ## A Note about Tuning
 
 Due to the nature of the calculation of the consonance value, the irrational numbers of
