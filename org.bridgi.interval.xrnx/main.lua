@@ -23,9 +23,10 @@ local settings = renoise.Document.create("IntervalCalculatorSettings") { view_ty
 --   Harmony Perception by Periodicity Detection
 --   Article in Journal of Mathematics and Music · June 2013
 --   DOI: 10.1080/17459737.2015.1033024
-local function approximate_fraction(a, b, max)
+--   Frieder Stolzenburg
+local function approximate_irrational(irrational, max)
   local p = settings.hearing_threshold.value
-  local x = a / b
+  local x = irrational
   local x1 = (1 - p) * x
   local x2 = (1 + p) * x
   local al = math.floor(x)
@@ -36,16 +37,16 @@ local function approximate_fraction(a, b, max)
     local am = al + ar
     local bm = bl + br
     if am > max or bm > max then
-      error_log("Not able to approximate interval "..tostring(a).."/"..tostring(b)
-                             .." with hearing threshold "..tostring(settings.hearing_threshold.value)
-                             .." and numerator and denominator limit ".. max)
-      return { a, b }
+      error_log("Not able to approximate interval for ".. irrational
+              .." with hearing threshold "..tostring(p)
+              .." and numerator and denominator limit ".. max)
+      return { 0, 0 }
     end
     local ambm = am / bm
     if x1 <= ambm and ambm <= x2 then
-      trace_log("Approximated interval "..tostring(a).."/"..tostring(b)
-                            .." with hearing threshold "..tostring(settings.hearing_threshold.value)
-                            .." to "..tostring(am).."/"..tostring(bm))
+      trace_log("Approximated interval ".. irrational
+              .." with hearing threshold "..tostring(p)
+              .." to "..tostring(am).."/"..tostring(bm))
 
       return { am, bm }
     elseif x2 < ambm then
@@ -64,19 +65,43 @@ local function approximate_fraction(a, b, max)
   until false
 end
 
+local function approximate_rational(a, b, max)
+  return approximate_irrational(a / b, max)
+end
+
 -- Create patched Pythagorean tuning to cope with comparably high consonance values due to
 -- high numerator or denominator values ( as proposed by Werner Brefeld )
 local function patch_pythagorean5()
-  local log = "Effective 'Pythagorean*' with hearing threshold "..tostring(settings.hearing_threshold.value)..": "
+  local log = "Effective 'Pythagorean*' with respect to hearing threshold "
+              ..tostring(settings.hearing_threshold.value)..": "
   for i, ratio in ipairs(TUNING[5]) do
-    local patched = approximate_fraction(ratio[1], ratio[2], 80)
+    local patched = approximate_rational(ratio[1], ratio[2], 80)
     TUNING[5][i] = patched
-    log = log..tostring(patched[0]).."/"..tostring(patched[1]).." "
+    log = log..tostring(patched[1]).."/"..tostring(patched[2]).." "
   end
   trace_log(log)
 end
 
--- Make sure that the volume is inside [0,127]
+-- Create rational tuning as described in
+--   Harmony Perception by Periodicity Detection
+--   Article in Journal of Mathematics and Music · June 2013
+--   DOI: 10.1080/17459737.2015.1033024
+--   Frieder Stolzenburg
+local function patch_rational7()
+  local log = "Effective 'Rational' with respect to hearing threshold "
+              ..tostring(settings.hearing_threshold.value)..": "
+  for i = 2, 12 do
+    local irrational = 2 ^ ((i - 1) / 12)
+    local rational   = approximate_irrational(irrational, 100)
+    TUNING[7][i] = rational
+    log = log..tostring(rational[1]).."/"..tostring(rational[2]).." "
+  end
+  TUNING[7][ 1] = {1, 1}
+  TUNING[7][13] = {2, 1}
+  trace_log(log)
+end
+
+-- Make sure that the volume is inside [0, 127]
 local function safe_volume(volume)
   return (not volume) and 127 or (volume > 127 and 127 or volume)
 end
@@ -666,7 +691,11 @@ function calculate_intervals()
   trace_log("--")
   trace_log("-------------------------------------------------------------------------------------------------------------------------------------")
 
+  trace_log("Patching 'Pythagorean' ratios")
   patch_pythagorean5()
+
+  trace_log("Patching 'Rational tuning' ratios")
+  patch_rational7()
 
   local vb                 = renoise.ViewBuilder()
   local song               = renoise.song()

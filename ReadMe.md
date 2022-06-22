@@ -86,18 +86,16 @@ triad and the dominant seventh chord:
 ## A Note about Tuning
 
 Due to the nature of the calculation of the consonance value, the irrational numbers of
-the equal temperament cannot be used, therefore the frequency ratios of the pure intervals
-are taken instead for the equal temperament.
+the equal temperament cannot be used, therefore the frequency ratios are approximated
+as described by Frieder Stolzenburg (see references). The hearing threshold, which can
+be configured in the settings, can be used to fine-tune the approximation.  
 
 Furthermore, high values for numerator or denominator concerning the frequency ratio
 will cause comparably high consonance values. This mainly affects the Pythagorean tuning.
 Following a proposal of Werner Brefeld, a patched Pythagorean tuning, suffixed by "*",
 is provided, which takes frequency ratios similar to the original ones, but with lower
-terms as long as the deviation is less than a certain hearing threshold, which can be
-configured in the settings.
-
-The patched Pythagorean tuning is created using an algorithm described by Frieder
-Stolzenburg (see references).
+terms as long as the deviation is less than a certain hearing threshold, using the same
+algorithm as mentioned above. 
 
 ## Settings
 
@@ -127,7 +125,8 @@ distributed note lines.
 
 My special thanks go to Werner Brefeld for his elaboration of the
 [consonance value calculation](http://www.brefeld.homepage.t-online.de/konsonanz.html)
-(in German only) and his willing and extensive support regarding questions.
+(in German only) and his willing and extensive support regarding questions, and for
+cross-reading this documentation.
 
 Further reference:
 >Stolzenburg, Frieder.
