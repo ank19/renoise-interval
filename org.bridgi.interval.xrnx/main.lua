@@ -8,16 +8,18 @@ renoise.tool():add_menu_entry { name   = "Main Menu:Tools:Bridgi:Interval Calcul
 renoise.tool():add_keybinding { name   = "Global:Tools:Interval Calculator",
                                 invoke = function() calculate_intervals() end }
 
-local settings = renoise.Document.create("IntervalCalculatorSettings") { view_type              =  1,
+local settings = renoise.Document.create("IntervalCalculatorSettings") { view_type              =   1,
                                                                          language               = "de",
-                                                                         max_delta              = 30,
-                                                                         max_lines              =  8,
-                                                                         dissonance_threshold_1 =  3.5,
-                                                                         dissonance_threshold_2 =  6.5,
-                                                                         dissonance_threshold_3 = 11.0,
-                                                                         hearing_threshold      =  0.004,
-                                                                         tuning                 =  1,
-                                                                         volume_reduction       =  0.20}
+                                                                         max_delta              =  30,
+                                                                         max_lines              =   8,
+                                                                         dissonance_threshold_1 =   3.5,
+                                                                         dissonance_threshold_2 =   6.5,
+                                                                         dissonance_threshold_3 =  11.0,
+                                                                         hearing_threshold      =   0.004,
+                                                                         tuning                 =   1,
+                                                                         tuning_note            =   3,
+                                                                         pitch                  = 440,
+                                                                         volume_reduction       =   0.20}
 
 -- Approximate fraction algorithm from
 --   Harmony Perception by Periodicity Detection
@@ -137,6 +139,74 @@ local function interval_properties(note1, note2)
     theory_interval = delta
   end
   return interval, halftones, intervals, theory_interval
+end
+
+
+-- C  C#  D  D#  E  F  F#  G  G#  A  A#  B
+-- 0  1   2  3   4  5  6   7  8   9  10  11
+
+local CYCLE_OF_FIFTHS = {         --|--
+  -- Centered on C  (C# G# D# A# F  C  G  D  A  E  B  F#)
+  { 1, 8, 3, 10, 5, 0, 7, 2, 9, 4, 11, 6 },
+  -- Centered on C# (D  A  E  B  F# C# G# D# A# F  C  G )
+  { 2, 9, 4, 11, 6, 1, 8, 3, 10, 5, 0, 7 },
+  -- Centered on D  (D# A# F  C  G  D  A  E  B  F# C# G#)
+  { 3, 10, 5, 0, 7, 2, 9, 4, 11, 6, 1, 8 },
+  -- Centered on D# (E  B  F# C# G# D# A# F  C  G  D  A )
+  { 4, 11, 6, 1, 8, 3, 10, 5, 0, 7, 2, 9 },
+  -- Centered on E  (F  C  G  D  A  E  B  F# C# G# D# A#)
+  { 5, 0, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10 },
+  -- Centered on F  (F# C# G# D# A# F  C  G  D  A  A# B )
+  { 6, 1, 8, 3, 10, 5, 0, 7, 2, 9, 4, 11 },
+  -- Centered on F# (G  D  A  E  B  F# C# G# D# A# F  C )
+  { 7, 2, 9, 4, 11, 6, 1, 8, 3, 10, 5, 0 },
+  -- Centered on G  (G# D# A# F  C  G  D  A  E  B  F# C#)
+  { 8, 3, 10, 5, 0, 7, 2, 9, 4, 11, 6, 1 },
+  -- Centered on G# (A  E  B  F# C# G# D# A# F  C  G  D )
+  { 9, 4, 11, 6, 1, 8, 3, 10, 5, 0, 7, 2 },
+  -- Centered on A  (A# F  C  G  D  A  E  B  F# C# G# D#)
+  { 10, 5, 0, 7, 2, 9, 4, 11, 6, 1, 8, 3 },
+  -- Centered on A# (B  F# C# G# D# A# F  C  G  D  A  A#)
+  { 11, 6, 1, 8, 3, 10, 5, 0, 7, 2, 9, 4 },
+  -- Centered on B  (C  G  D  A  E  B  F# C# G# D# A# F )
+  { 0, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10, 5 }
+}
+
+local function pythagorean()
+  local cycle_of_fifths = CYCLE_OF_FIFTHS[settings.tuning_note.value]
+  local pitch_note_i
+  for i, n in ipairs(cycle_of_fifths) do
+    if n == 9 then -- Kammerton a'
+      pitch_note_i = i
+    end
+  end
+  local freq_cycle = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
+  freq_cycle[pitch_note_i] = settings.pitch.value
+  if pitch_note_i >  1 then for i = pitch_note_i - 1,  1, -1 do freq_cycle[i] = freq_cycle[i + 1] * (2 / 3) end end
+  if pitch_note_i < 12 then for i = pitch_note_i + 1, 12,  1 do freq_cycle[i] = freq_cycle[i - 1] * (3 / 2) end end
+  local log = ""
+  for _, v in ipairs(freq_cycle) do log = log .. v .. " " end
+  trace_log("Frequencies (unadjusted, circle): "..log)
+  local freq_notes = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
+  for i, n in ipairs(cycle_of_fifths) do
+    freq_notes[n + 1] = freq_cycle[i]
+  end
+  log = ""
+  for _, v in ipairs(freq_notes) do log = log .. v .. " " end
+  trace_log("Frequencies (unadjusted, increasing): "..log)
+  trace_log("Adjusting frequencies left of a'")
+  for j = 9, 1, -1 do
+    while freq_notes[j + 1] / freq_notes[j] > 2.0 do freq_notes[j] = freq_notes[j] * 2 end
+    while freq_notes[j + 1] / freq_notes[j] < 1.0 do freq_notes[j] = freq_notes[j] / 2 end
+  end
+  trace_log("Adjusting frequencies right of a'")
+  for j = 11, 12, 1 do
+    while freq_notes[j] / freq_notes[j - 1] < 1.0 do freq_notes[j] = freq_notes[j] * 2 end
+    while freq_notes[j] / freq_notes[j - 1] > 2.0 do freq_notes[j] = freq_notes[j] / 2 end
+  end
+  log = ""
+  for _, v in ipairs(freq_notes) do log = log .. v .. " " end
+  trace_log("Frequencies (adjusted): "..log)
 end
 
 -- Calculate more sophisticated interval properties for a single two-tone construct
@@ -696,6 +766,9 @@ function calculate_intervals()
 
   trace_log("Patching 'Rational tuning' ratios")
   patch_rational7()
+
+  trace_log("Creating Pythagorean frequencyies")
+  pythagorean()
 
   local vb                 = renoise.ViewBuilder()
   local song               = renoise.song()
