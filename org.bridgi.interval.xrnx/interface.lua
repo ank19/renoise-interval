@@ -31,15 +31,20 @@ function configuration_section(vb, settings, calculation_results)
         vb:row {
         vb:space  { width    = 110 },
         vb:row {
-            vb:popup { id       = ID_SETTINGS_TUNING,
+            vb:popup {id       = ID_SETTINGS_TUNING,
                       width    = 150,
                       bind     = settings.tuning,
                       notifier = function(new_index)
                           settings.tuning.value = new_index
                           update_interface(vb, settings, calculation_results)
                       end }
-
             },
+            vb:popup  { id       = ID_SETTINGS_TUNING_NOTE,
+                        width    = 50,
+                        bind     = settings.tuning_note,
+                        notifier = function(new_index)
+                            update_interface(vb, settings, calculation_results)
+                        end },
             vb:popup  { id       = "popup_language",
                         items    = {"Deutsch","English"},
                         width    = 130,
@@ -115,25 +120,20 @@ function configuration_section(vb, settings, calculation_results)
                                                  bind    = settings.dissonance_threshold_3 } }
 
             },
-            vb:space  { width    = 40 },
-            vb:row {
-                style = "invisible",
-                vb:text   { id       = ID_SETTINGS_RECALCULATION,
-                            width    = 100,
-                            style    = "strong",
-                            text     = "???" } },
-                        vb:space  { width    = 10 },
-            vb:rotary { min      =  0.001,
-                        max      =  0.010,
+            vb:space  { width    = 10 },
+            vb:rotary { min      =  0.004,
+                        max      =  0.015,
                         default  =  0.004,
                         width    =  2 * DEFAULT_CONTROL_HEIGHT,
                         height   =  2 * DEFAULT_CONTROL_HEIGHT,
-                        bind     = settings.hearing_threshold
-            },
+                        bind     = settings.hearing_threshold,
+                        notifier = function(value)
+                                       update_interface(vb, settings, calculation_results)
+                                   end },
             vb:column { vb:text       { id      = ID_SETTINGS_HEARING_THRESHOLD,
                                         text    = "???" },
-                        vb:valuefield { min     =  0.001,
-                                        max     =  0.010,
+                        vb:valuefield { min     =  0.004,
+                                        max     =  0.015,
                                         active  = false,
                                         bind    = settings.hearing_threshold }
             },
@@ -152,9 +152,20 @@ function configuration_section(vb, settings, calculation_results)
                                         bind    = settings.volume_reduction }
             },
             vb:space  { width = 10 },
+            vb:column { vb:text       { id      = ID_SETTINGS_PITCH,
+                                        text    = "???" },
+                        vb:valuebox   { min     =  400.00,
+                                        max     =  470.00,
+                                        active  = true,
+                                        bind    = settings.pitch,
+                                        notifier = function(value)
+                                            update_interface(vb, settings, calculation_results)
+                                        end }
+            },
+            vb:space  { width = 10 },
             vb:column { vb:text       { id      = ID_SETTINGS_MATRIX_SIZE,
                                         text    = "???" },
-                        vb:valuebox   { min     =  1,
+                        vb:valuebox   { min     =  3,
                                         max     = 10,
                                         active  = true,
                                         bind    = settings.max_lines } },

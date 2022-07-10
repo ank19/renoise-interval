@@ -102,8 +102,8 @@ dissonance_threshold_text["de"] = "Sonanz-Schwellwerte"
 dissonance_threshold_text["en"] = "Sonance thresholds"
 
 hearing_threshold_texts = {}
-hearing_threshold_texts["de"] = "Hörschwelle für Pythagorean*"
-hearing_threshold_texts["en"] = "Hearing threshold for Pythagorean*"
+hearing_threshold_texts["de"] = "Hörschwelle"
+hearing_threshold_texts["en"] = "Hearing threshold"
 
 chord_header_actual = {}
 chord_header_actual["de"] = "Akkord"
@@ -117,29 +117,33 @@ settings_header = {}
 settings_header["de"] = "Einstellungen"
 settings_header["en"] = "Settings"
 
-settings_recalculation_header = {}
-settings_recalculation_header["de"] = "Einstellungen\n(Neuberechnung\nerforderlich)"
-settings_recalculation_header["en"] = "Settings\n(Recalculation\nrequired)"
-
 settings_interval = {}
 settings_interval["de"] = {"Sonanz" , "Intervall", "Effekt", "Cents"}
 settings_interval["en"] = {"Sonance", "Interval" , "Effect", "Cents"}
 
 settings_tuning = {}
-settings_tuning["de"] = {"Reine Intervalle", "Reine Stimmung", "Gleichstufig"     , "Pythagoreisch", "Pythagoreisch*", "Kirnberger III", "Rationale Stimmung"}
-settings_tuning["en"] = {"Pure intervals"  , "Just tuning"   , "Equal temperament", "Pythagorean"  , "Pythagorean*"  , "Kirnberger III", "Rational tuning"}
+settings_tuning["de"] = {"Reine Intervalle", "Gleichstufig"     ,"Pythagoreisch"}
+settings_tuning["en"] = {"Pure intervals"  , "Equal temperament","Pythagorean"  }
+
+settings_tuning_note = {}
+settings_tuning_note["de"] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "H"}
+settings_tuning_note["en"] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"}
 
 settings_volume_reduction = {}
-settings_volume_reduction["de"] = "Dämpfungsfaktor Nachklang"
-settings_volume_reduction["en"] = "Lingering damping factor"
+settings_volume_reduction["de"] = "Dämpfung Nachklang"
+settings_volume_reduction["en"] = "Lingering damping"
 
 settings_matrix_size = {}
-settings_matrix_size["de"] = "Zeilenanzahl Anzeige"
-settings_matrix_size["en"] = "Display row count"
+settings_matrix_size["de"] = "Notenzeilen"
+settings_matrix_size["en"] = "Note rows"
 
 settings_search_rows = {}
 settings_search_rows["de"] = "Suchweite"
 settings_search_rows["en"] = "Search range"
+
+settings_pitch = {}
+settings_pitch["de"] = "Kammerton a' (A4)"
+settings_pitch["en"] = "Diaspon a' (A4)"
 
 status_texts = {}
 status_texts[STATUS_OK] = {}
@@ -189,7 +193,8 @@ local function dissonance_details(dissonance, settings)
     if not dissonance then
         return dissonance_omitted_texts[language]
     end
-    local specific_dissonance = dissonance[settings.tuning.value]
+    --local specific_dissonance = dissonance[settings.tuning.value]
+    local specific_dissonance = dissonance
     if not specific_dissonance then
         return dissonance_omitted_texts[language]
     end
@@ -207,18 +212,12 @@ local function dissonance_details(dissonance, settings)
 end
 
 local function update_interval(vb, data, settings)
-    local language   = settings.language.value
-    local view       = settings.view_type.value
-    local intervals  = data.intervals
-    local halftones  = data.halftones
-    local octaves    = data.octaves
-    local dissonance = data.dissonance
-    local cents      = data.cents
-    local value      = data.value
+    local language      = settings.language.value
+    local view          = settings.view_type.value
+    local interval_data = data.interval_data
+    local value         = data.value
     for col = 2, data.no_of_note_columns * 2 + 2 do
         for row = 1, #value do
-            local interval         = intervals[row][col]
-            local theory_interval  = data.theory_interval[row][col]
             local interval_text    = ""
             local effect_text      = ""
             local octave_text      = ""
@@ -227,9 +226,18 @@ local function update_interval(vb, data, settings)
             local dissonance_color = COLOR_DISSONANCE_X
             local view_id          = ID_ELEMENT..row.."."..col
             local is_chord_column  = col > data.no_of_note_columns * 2
-            dissonance_text, dissonance_color = dissonance_details(dissonance[row][col], settings)
+            local interval, octave, halftones, display_interval, a, b, p, f1, f2, cents, dissonance
+            if not is_chord_column then
+                local wrapper = interval_data[row][col]
+                if wrapper then
+                    interval, halftones, octave, display_interval, a, b, cents, p, f1, f2, dissonance = wrapper()
+                    trace_log("-----------------------------"..tostring(interval)..","..tostring(halftones)..","..tostring(octave)..","..tostring(display_interval)..","..tostring(a)..","..tostring(b)..","..tostring(cents)..","..tostring(p)..","..tostring(f1)..","..tostring(f2)..","..tostring(dissonance))
+                end
+            else
+                dissonance = interval_data[row][col]
+            end
+            dissonance_text, dissonance_color = dissonance_details(dissonance, settings)
             if interval then
-                local octave = octaves[row][col]
                 octave_text = tostring(octave).." "..octave_texts[language]
                 local has_dedicated_text = octave == 0 or (octave == 1 and interval == 12)
                 if     octave <  0        then octave_text = ""..octave_text
@@ -237,8 +245,15 @@ local function update_interval(vb, data, settings)
                                                effect_text = effect_texts[language][interval + 1]
                 else                           octave_text = "+"..octave_text
                 end
-                interval_text = interval_texts[language][theory_interval + 1].."\n("..tostring(halftones[row][col])..")"
-                cents_text    = string.format("%.0f\nCents",cents[row][col][settings.tuning.value])
+                interval_text = interval_texts[language][display_interval + 1]
+                                .."\n("
+                                ..tostring(halftones)
+                                .." HT   "
+                                ..a
+                                .."/"
+                                ..b
+                                ..")"
+                cents_text    = string.format("%.0f\nCents", cents)
             end
             if     view == 1 then if (interval or is_chord_column) and dissonance_text and dissonance_color then
                                       update_text (vb, view_id, dissonance_text )
@@ -290,14 +305,15 @@ function update_interface(vb, settings, data)
     update_text    (vb, ID_HEADER_CHORD_ACTUAL          , chord_header_actual          [language])
     update_text    (vb, ID_HEADER_CHORD_LINGER          , chord_header_linger          [language])
     update_text    (vb, ID_SETTINGS                     , settings_header              [language])
-    update_text    (vb, ID_SETTINGS_RECALCULATION       , settings_recalculation_header[language])
     update_text    (vb, ID_SETTINGS_DISSONANCE_THRESHOLD, dissonance_threshold_text    [language])
     update_text    (vb, ID_SETTINGS_HEARING_THRESHOLD   , hearing_threshold_texts      [language])
     update_text    (vb, ID_SETTINGS_VOLUME_REDUCTION    , settings_volume_reduction    [language])
+    update_text    (vb, ID_SETTINGS_PITCH               , settings_pitch               [language])
     update_text    (vb, ID_SETTINGS_MATRIX_SIZE         , settings_matrix_size         [language])
     update_text    (vb, ID_SETTINGS_SEARCH_ROWS         , settings_search_rows         [language])
     update_items   (vb, ID_SETTINGS_INTERVAL            , settings_interval            [language])
     update_items   (vb, ID_SETTINGS_TUNING              , settings_tuning              [language])
+    update_items   (vb, ID_SETTINGS_TUNING_NOTE         , settings_tuning_note         [language])
     if language == "de" then vb.views.popup_language.value = 1
                         else vb.views.popup_language.value = 2
     end
