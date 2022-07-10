@@ -1,110 +1,71 @@
---   _______ _     _ __   _ _____ __   _  ______ _______
---      |    |     | | \  |   |   | \  | |  ____ |______
---      |    |_____| |  \_| __|__ |  \_| |_____| ______|
+--   _______ __   __ _______        _______       _____  _______      _______ _____ _______ _______ _     _ _______
+--   |         \_/   |       |      |______      |     | |______      |______   |   |______    |    |_____| |______
+--   |_____     |    |_____  |_____ |______      |_____| |            |       __|__ |          |    |     | ______|
 --
 
-TUNING = {
-    -- Pure intervals
-    { {  1,   1},
-      { 16,   5},
-      {  9,   8},
-      {  6,   5},
-      {  5,   4},
-      {  4,   3},
-      { 45,  32},
-      {  3,   2},
-      {  8,   5},
-      {  5,   3},
-      { 16,   9},
-      { 15,   8},
-      {  2,   1} },
-    -- Just tuning
-    { {  1,   1},
-      { 16,   5},
-      {  9,   8},
-      {  6,   5},
-      {  5,   4},
-      {  4,   3},
-      {  7,   5},
-      {  3,   2},
-      {  8,   5},
-      {  5,   3},
-      {  9,   5},
-      { 15,   8},
-      {  2,   1} },
-    -- Equal temperament
-    -- The same fractions are used as just tuning, as, of course, the irrational numbers of the equal temperament cannot
-    -- be represented as whole number fractions. Just tuning is used as a approximation. Pls. also note that there is a
-    -- special rule in the interval_properties() method for calculating cents, as these ratios cannot be used, of course.
-    { {  1,   1},
-      { 16,   5},
-      {  9,   8},
-      {  6,   5},
-      {  5,   4},
-      {  4,   3},
-      {  7,   5},
-      {  3,   2},
-      {  8,   5},
-      {  5,   3},
-      {  9,   5},
-      { 15,   8},
-      {  2,   1} },
-    -- Pythagorean
-    { {  1,   1},
-      {256, 243},
-      {  9,   8},
-      { 32,  27},
-      { 81,  64},
-      {  4,   3},
-      {729, 512},
-      {  3,   2},
-      {128,  81},
-      { 27,  16},
-      { 16,   9},
-      {253, 128},
-      {  2,   1} },
-    -- Pythagorean*
-    { {  1,   1},
-      {256, 243},
-      {  9,   8},
-      { 32,  27},
-      { 81,  64},
-      {  4,   3},
-      {729, 512},
-      {  3,   2},
-      {128,  81},
-      { 27,  16},
-      { 16,   9},
-      {253, 128},
-      {  2,   1} },
-    -- Kirnberger III
-    { {  1,   1},
-      { 25,  24},
-      {  9,   8},
-      {  6,   5},
-      {  5,   4},
-      {  4,   3},
-      { 45,  32},
-      {  3,   2},
-      { 25,  16},
-      {  5,   3},
-      { 16,   9},
-      { 15,   8},
-      {  2,   1} },
-    -- Rational tuning
-    { {  1,   1},
-      { 16,  15},
-      {  9,   8},
-      {  6,   5},
-      {  5,   4},
-      {  4,   3},
-      { 17,   2},
-      {  3,   2},
-      {  8,   5},
-      {  5,   3},
-      { 16,   9},
-      { 15,   8},
-      {  2,   1} } }
+-- C  C#  D  D#  E  F  F#  G  G#  A  A#  B
+-- 0  1   2  3   4  5  6   7  8   9  10  11
+
+CYCLE_OF_FIFTHS = {               --|--
+  -- Centered on C  (C# G# D# A# F  C  G  D  A  E  B  F#)
+  { 1, 8, 3, 10, 5, 0, 7, 2, 9, 4, 11, 6 },
+  -- Centered on C# (D  A  E  B  F# C# G# D# A# F  C  G )
+  { 2, 9, 4, 11, 6, 1, 8, 3, 10, 5, 0, 7 },
+  -- Centered on D  (D# A# F  C  G  D  A  E  B  F# C# G#)
+  { 3, 10, 5, 0, 7, 2, 9, 4, 11, 6, 1, 8 },
+  -- Centered on D# (E  B  F# C# G# D# A# F  C  G  D  A )
+  { 4, 11, 6, 1, 8, 3, 10, 5, 0, 7, 2, 9 },
+  -- Centered on E  (F  C  G  D  A  E  B  F# C# G# D# A#)
+  { 5, 0, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10 },
+  -- Centered on F  (F# C# G# D# A# F  C  G  D  A  A# B )
+  { 6, 1, 8, 3, 10, 5, 0, 7, 2, 9, 4, 11 },
+  -- Centered on F# (G  D  A  E  B  F# C# G# D# A# F  C )
+  { 7, 2, 9, 4, 11, 6, 1, 8, 3, 10, 5, 0 },
+  -- Centered on G  (G# D# A# F  C  G  D  A  E  B  F# C#)
+  { 8, 3, 10, 5, 0, 7, 2, 9, 4, 11, 6, 1 },
+  -- Centered on G# (A  E  B  F# C# G# D# A# F  C  G  D )
+  { 9, 4, 11, 6, 1, 8, 3, 10, 5, 0, 7, 2 },
+  -- Centered on A  (A# F  C  G  D  A  E  B  F# C# G# D#)
+  { 10, 5, 0, 7, 2, 9, 4, 11, 6, 1, 8, 3 },
+  -- Centered on A# (B  F# C# G# D# A# F  C  G  D  A  A#)
+  { 11, 6, 1, 8, 3, 10, 5, 0, 7, 2, 9, 4 },
+  -- Centered on B  (C  G  D  A  E  B  F# C# G# D# A# F )
+  { 0, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10, 5 }
+}
+
+EQUAL_TEMPERAMENT =
+-- The same fractions are used as just tuning, as, of course, the irrational numbers of the equal temperament cannot
+-- be represented as whole number fractions. Just tuning is used as a approximation. Pls. also note that there is a
+-- special rule in the interval_properties() method for calculating cents, as these ratios cannot be used, of course.
+  { {  1,   1},
+    { 16,  15},
+    {  9,   8},
+    {  6,   5},
+    {  5,   4},
+    {  4,   3},
+    {  7,   5},
+    {  3,   2},
+    {  8,   5},
+    {  5,   3},
+    {  9,   5},
+    { 15,   8},
+    {  2,   1} }
+
+PURE_INTERVALS =
+  -- Pure intervals
+  { {  1,   1},
+    { 16,  15},
+    {  9,   8},
+    {  6,   5},
+    {  5,   4},
+    {  4,   3},
+    { 45,  32},
+    {  3,   2},
+    {  8,   5},
+    {  5,   3},
+    { 16,   9},
+    { 15,   8},
+    {  2,   1} }
 
 --   _______  _____          _____   ______ _______
 --   |       |     | |      |     | |_____/ |______
@@ -145,12 +106,13 @@ HEADER_HEIGHT = 20
 ID_HEADER_CHORD_ACTUAL           = "header_chord_actual"
 ID_HEADER_CHORD_LINGER           = "header_chord_linger"
 ID_SETTINGS                      = "settings"
-ID_SETTINGS_RECALCULATION        = "settings_recalculation"
 ID_SETTINGS_INTERVAL             = "settings_interval"
 ID_SETTINGS_TUNING               = "settings_tuning"
 ID_SETTINGS_DISSONANCE_THRESHOLD = "settings_dissonance_threshold"
 ID_SETTINGS_HEARING_THRESHOLD    = "settings_hearing_threshold"
 ID_SETTINGS_VOLUME_REDUCTION     = "settings_volume_reduction"
+ID_SETTINGS_PITCH                = "settings_pitch"
+ID_SETTINGS_TUNING_NOTE          = "settings_tuning_note"
 ID_SETTINGS_SEARCH_ROWS          = "settings_search_rows"
 ID_SETTINGS_MATRIX_SIZE          = "settings_matrix_size"
 ID_SETTINGS_DEBUG                = "settings_debug"

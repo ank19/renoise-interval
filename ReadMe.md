@@ -6,8 +6,9 @@
 ## Overview
 
 This plugin for [renoise](https://www.renoise.com)(tm) is a novice's attempt to approach
-the subject of music theory. The motivation is to provide an aid to compensate for lack
-of ear training or musical education in general and to speed up learning.
+the subject of music theory from a mathematical viewpoint. The motivation is to provide
+an aid to compensate for lack of ear training or musical education in general and to
+speed up learning.
 
 The main features, which are implemented as different views, are
 - Determination of the **interval** of two notes for intervals between 0 and 24
@@ -83,43 +84,47 @@ triad and the dominant seventh chord:
 
 ![Screenshot3](Screenshot3.png)
 
+Yet another example concerning the calculation of the consonance value, this time for the
+Pythagorean tuning on D, showing the imperfect fifth or wolf fifth with a significantly
+higher dissonance of 18.17 instead of 2.45.
+
+![Screenshot3](Screenshot4.png)
+
 ## A Note about Tuning
 
 Due to the nature of the calculation of the consonance value, the irrational numbers of
 the equal temperament cannot be used, therefore the frequency ratios are approximated
 as described by Frieder Stolzenburg (see references). The hearing threshold, which can
-be configured in the settings, can be used to fine-tune the approximation.  
+be configured in the settings, can be used to fine-tune the approximation.
 
-Furthermore, high values for numerator or denominator concerning the frequency ratio
-will cause comparably high consonance values. This mainly affects the Pythagorean tuning.
-Following a proposal of Werner Brefeld, a patched Pythagorean tuning, suffixed by "*",
-is provided, which takes frequency ratios similar to the original ones, but with lower
-terms as long as the deviation is less than a certain hearing threshold, using the same
-algorithm as mentioned above. 
+For the Pythagorean tuning the same approximation is used, based on frequencies derived
+from the pitch level and the tuning note. The hearing threshold is also considered when
+calculating the ratios.
+
+The pure interval tuning is not a tuning, of course, and does not take anything into
+account, no pitch, no tuning note, no hearing threshold. 
 
 ## Settings
 
-The settings are divided into two distinct sections. The left-most section indicates
-settings which can be changed on-the-fly, without recalculation (= reopening the tool).
+The fist setting is the type of the view, representing the different features outline
+above. Furthermore, the tuning, the tuning note and the language can be selected.
+Pls. note the  limitations concerning tunings (see below). The sonance thresholds are
+used to control the colors for displaying the consonance values. The left rotary controls
+the threshold between light green for strong consonance and dark green for imperfect
+consonance, the rotary in the middle then the threshold to slight dissonance and finally,
+the right rotary the threshold to the strong dissonance.
 
-This sections consists of the type of the view, representing the different features
-outline above. Furthermore, the tuning and the language can be selected. Pls. note the
-limitations concerning tunings (see below). The sonance thresholds are used to control
-the colors for displaying the consonance values. The left rotary controls the threshold
-between light green for strong consonance and dark green for imperfect consonance, the
-rotary in the middle then the threshold to slight dissonance and finally, the right
-rotary the threshold to the strong dissonance.
+Furthermore, the hearing threshold can be configured, as outlined in the tuning  chapter
+above. Furthermore, the damping factor can be used to fine-tune the calculation of the
+lingering chord. The calculation basically calculates a new volume by taking the original
+volume times the damping factor to the power of the number of note lines, which is equal
+to the distance of the lingering note relative to the actual chord. Furthermore, the pitch
+level (= Kammerton-Frequenz) can be configured.
 
-Via the right section the hearing threshold can be configured, as outlined in the tuning
-chapter above. Furthermore, the damping factor can be used to fine-tune the calculation
-of the lingering chord. The calculation basically calculates a new volume by taking the
-original volume times the damping factor to the power of the number of note lines, which
-is equal to the distance of the lingering note relative to the actual chord.
-
-Lastly, the right section can also be used to optimize the display of the note matrix by
+Lastly, the rightmost section can also be used to optimize the display of the note matrix by
 selecting the maximum number of lines to be displayed as well as the search depth, which
 can be used to limit the search range, which might become handy in case of sparsely
-distributed note lines.
+distributed note lines. Note, that this rightmost section requires reopening the window.
 
 # Acknowledgements
 
@@ -141,8 +146,7 @@ Further reference:
 - Only one track at a time is considered
 - This tool is not intended for professional use - do not use for critical applications
 - No guarantee is given for correctness
-- Scales are not considered yet
-- Specific effects like pitch level, etc. are not considered
+- Specific renoise(tm) effects like pitch level, etc. are not considered
 
 # License
 
