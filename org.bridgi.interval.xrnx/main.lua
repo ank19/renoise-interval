@@ -154,9 +154,10 @@ local function pythagorean_frequency(frequencies, note)
 end
 
 -- Calculate interval properties
-local function pythagorean_interval(note1, note2, interval, octaves, volume)
+local function pythagorean_interval(note1, note2, interval, octaves, volume, cache)
   trace_log("Calculating interval data from "..note1.." to "..note2.." in Pythagorean temperament");
-  local frequencies = pythagorean_frequencies()
+  local frequencies = cache.frequencies and cache.frequencies or pythagorean_frequencies()
+  cache.frequencies = frequencies
   local frequency1 = round(pythagorean_frequency(frequencies, note1), 2)
   local frequency2 = round(pythagorean_frequency(frequencies, note2), 2)
   local p = math.max(frequency1, frequency2) / math.min(frequency1, frequency2)
@@ -186,7 +187,7 @@ local function equal_frequency(note)
 end
 
 -- Calculate interval properties
-local function equal_interval(note1, note2, interval, octaves, volume)
+local function equal_interval(note1, note2, interval, octaves, volume, cache)
   trace_log("Calculating interval data from "..note1.." to "..note2.." in equal temperament");
   local frequency1 = round(equal_frequency(note1),2)
   local frequency2 = round(equal_frequency(note2),2)
@@ -206,7 +207,7 @@ end
 --  |    |__| |  \ |___    | | \|  |  |___ |  \  \/  |  | |___ ___]
 
 -- Calculate interval properties
-local function pure_interval(note1, note2, interval, octaves, volume)
+local function pure_interval(note1, note2, interval, octaves, volume, cache)
   trace_log("Calculating interval data from "..note1.." to "..note2.." in pure intervals");
   local a, b       = unpack(PURE_INTERVALS[interval + 1])
   local cents      = 1200 * (octaves + math.log(a / b) / math.log(2))
@@ -237,13 +238,13 @@ local function interval_properties(note1, note2, volume1, volume2)
   if delta >= 13 and delta <= 24 then
     display_interval = delta
   end
-  return interval, function()
+  return interval, function(cache)
     local f
     if     settings.tuning.value == 3 then f = pythagorean_interval
     elseif settings.tuning.value == 2 then f = equal_interval
     elseif settings.tuning.value == 1 then f = pure_interval
     end
-    local a, b, cents, p, frequency1, frequency2, dissonance = f(note1, note2, interval, octaves, volume)
+    local a, b, cents, p, frequency1, frequency2, dissonance = f(note1, note2, interval, octaves, volume, cache)
     return interval, halftones, octaves * ((halftones < 0 and -1) or 1), display_interval,
            a, b, cents, p, frequency1, frequency2, dissonance
   end
@@ -257,7 +258,7 @@ end
 -- Calculate dissonance for a chord with notes having the same level of volume
 -- The calculation is (a1 * ... * an * b1 * ... * bn) ^ ( (1 / n ) * volume percentage distributed on two-tones)
 -- where n is the number of intervals and a/ b the frequency ratios to lowest terms
-local function chord_dissonance(volume, ...)
+local function chord_dissonance(volume, cache, ...)
   if not arg or arg.n == 0 then
     return nil
   end
@@ -269,7 +270,7 @@ local function chord_dissonance(volume, ...)
         local overall_ratio = { 1, 1 }
         for i3 = i1 + 1, i2 do
           local _, wrapper = interval_properties(arg[i3].note, arg[i3 - 1].note, volume, volume)
-          local _, _, _, _, a, b, _, _, _, _, _ = wrapper()
+          local _, _, _, _, a, b, _, _, _, _, _ = wrapper(cache)
           overall_ratio[1] = overall_ratio[1] * a
           overall_ratio[2] = overall_ratio[2] * b
         end
@@ -290,7 +291,7 @@ end
 
 -- Calculate dissonance for a chord with notes not necessarily having the same volume
 -- Basically the chord is dissected into chords having the same level of volume, again using the function above.
-local function dissect_chord(depth, ...)
+local function dissect_chord(depth,cache,...)
   if not arg or arg.n == 0 then
     return nil
   end
@@ -320,7 +321,13 @@ local function dissect_chord(depth, ...)
                                      volume_percentage = a.volume_percentage - min_volume})
   end
   trace_log("Found "..#partial.." notes with volume level "..min_volume..", which leaves "..#rest.." notes")
-  return chord_dissonance(min_volume, unpack(partial)) * dissect_chord(depth + 1, unpack(rest))
+  return chord_dissonance(min_volume, cache, unpack(partial)) * dissect_chord(depth + 1, cache, unpack(rest))
+end
+
+local function dissect_chord_wrapper(...)
+  return function(cache)
+    return dissect_chord(1, cache, unpack(arg))
+  end
 end
 
 --  ____ _ _  _ ___     _  _ ____ ___ ____ ____
@@ -703,9 +710,9 @@ function whole_chord(data, complete)
     if not interval_data[row] then
       interval_data[row] = {}
     end
-    interval_data[row][no_of_note_columns * 2 + 1] = dissect_chord(1, unpack(chord_actual[row]))
+    interval_data[row][no_of_note_columns * 2 + 1] = dissect_chord_wrapper(unpack(chord_actual[row]))
     -- Lingering chord dissonance only makes sense if no lines were omitted
-    if complete then interval_data[row][no_of_note_columns * 2 + 2] = dissect_chord(1, unpack(chord_linger[row]))
+    if complete then interval_data[row][no_of_note_columns * 2 + 2] = dissect_chord_wrapper(unpack(chord_linger[row]))
     else             interval_data[row][no_of_note_columns * 2 + 2] = nil
     end
   end
