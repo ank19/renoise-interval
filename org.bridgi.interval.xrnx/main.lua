@@ -529,12 +529,14 @@ end
 -- Initial creation of the note matrix used as data source
 function note_matrix(lines_of_interest, no_of_note_columns, left_out)
   local empty_columns, column_empty = empty_columns(lines_of_interest, no_of_note_columns)
+  local min_delta = math.huge
   local notes  = {}
   local value  = {}
   local steps  = {}
   local volume = {}
   local gaps   = {}
-  local i      = 0
+  local marker = {}
+  local i = 0
   local p
   for _, v in ordered_line_pairs(lines_of_interest) do
     i = i + 1
@@ -562,6 +564,9 @@ function note_matrix(lines_of_interest, no_of_note_columns, left_out)
         value [i][j] = note_column.note_value
         volume[i][j] = safe_volume(note_column.volume_value)
         steps [i][j] = v.delta
+        if v.delta < min_delta then
+          min_delta = v.delta
+        end
         for _, b in ipairs(filtered_left_out) do
           if is_note(b.note_columns[col].note_value) then
             gaps[i][j] = true
@@ -570,7 +575,21 @@ function note_matrix(lines_of_interest, no_of_note_columns, left_out)
       end
     end
   end
-  return no_of_note_columns - empty_columns, notes, value, volume, steps, gaps
+  for row = 1, #steps do
+    marker[row] = {}
+    for col = 1, no_of_note_columns do
+      marker[row][col] = steps[row][col] == min_delta
+    end
+  end
+  return {
+    no_of_note_columns = no_of_note_columns - empty_columns,
+    notes              = notes,
+    value              = value,
+    volume             = volume,
+    steps              = steps,
+    gaps               = gaps,
+    marker             = marker
+  }
 end
 
 -- Calculate intervals between successive notes
@@ -762,19 +781,18 @@ function calculate_intervals()
   local track              = song.tracks[track_index]
   local no_of_note_columns = track.visible_note_columns
   local position           = position_key(sequence_index, line_index)
-  local data               = {}
 
   local complete, lines, left_out = find_lines_of_interest(track, pattern_track, position)
   if not complete then
     status = { status = STATUS_LINES_OMITTED, color = COLOR_STATUS_WARNING }
   end
 
-  data.interval        = {}
-  data.interval_data   = {}
-  data.counterpoint    = {}
-  data.status          = status
+  local data = note_matrix(lines, no_of_note_columns, left_out)
 
-  data.no_of_note_columns, data.notes, data.value, data.volume, data.steps, data.gaps = note_matrix(lines, no_of_note_columns, left_out)
+  data.interval         = {}
+  data.interval_data    = {}
+  data.counterpoint     = {}
+  data.status           = status
 
   if data.no_of_note_columns < 1 then
     renoise.app():show_message("No notes found")

@@ -193,7 +193,6 @@ local function dissonance_details(dissonance, settings)
     if not dissonance then
         return dissonance_omitted_texts[language]
     end
-    --local specific_dissonance = dissonance[settings.tuning.value]
     local specific_dissonance = dissonance
     if not specific_dissonance then
         return dissonance_omitted_texts[language]
@@ -231,7 +230,7 @@ local function update_interval(vb, data, settings)
                 local wrapper = interval_data[row][col]
                 if wrapper then
                     interval, halftones, octave, display_interval, a, b, cents, p, f1, f2, dissonance = wrapper()
-                    trace_log("-----------------------------"..tostring(interval)..","..tostring(halftones)..","..tostring(octave)..","..tostring(display_interval)..","..tostring(a)..","..tostring(b)..","..tostring(cents)..","..tostring(p)..","..tostring(f1)..","..tostring(f2)..","..tostring(dissonance))
+                    trace_log("Calculated: "..tostring(interval)..","..tostring(halftones)..","..tostring(octave)..","..tostring(display_interval)..","..tostring(a)..","..tostring(b)..","..tostring(cents)..","..tostring(p)..","..tostring(f1)..","..tostring(f2)..","..tostring(dissonance))
                 end
             else
                 dissonance = interval_data[row][col]
@@ -302,18 +301,18 @@ function update_interface(vb, settings, data)
     end
     update_text    (vb, ID_STATUS_BAR                   , status_text)
     update_text    (vb, ID_COUNTERPOINT_BAR             , counterpoint_text)
-    update_text    (vb, ID_HEADER_CHORD_ACTUAL          , chord_header_actual          [language])
-    update_text    (vb, ID_HEADER_CHORD_LINGER          , chord_header_linger          [language])
-    update_text    (vb, ID_SETTINGS                     , settings_header              [language])
-    update_text    (vb, ID_SETTINGS_DISSONANCE_THRESHOLD, dissonance_threshold_text    [language])
-    update_text    (vb, ID_SETTINGS_HEARING_THRESHOLD   , hearing_threshold_texts      [language])
-    update_text    (vb, ID_SETTINGS_VOLUME_REDUCTION    , settings_volume_reduction    [language])
-    update_text    (vb, ID_SETTINGS_PITCH               , settings_pitch               [language])
-    update_text    (vb, ID_SETTINGS_MATRIX_SIZE         , settings_matrix_size         [language])
-    update_text    (vb, ID_SETTINGS_SEARCH_ROWS         , settings_search_rows         [language])
-    update_items   (vb, ID_SETTINGS_INTERVAL            , settings_interval            [language])
-    update_items   (vb, ID_SETTINGS_TUNING              , settings_tuning              [language])
-    update_items   (vb, ID_SETTINGS_TUNING_NOTE         , settings_tuning_note         [language])
+    update_text    (vb, ID_HEADER_CHORD_ACTUAL          , chord_header_actual      [language])
+    update_text    (vb, ID_HEADER_CHORD_LINGER          , chord_header_linger      [language])
+    update_text    (vb, ID_SETTINGS                     , settings_header          [language])
+    update_text    (vb, ID_SETTINGS_DISSONANCE_THRESHOLD, dissonance_threshold_text[language])
+    update_text    (vb, ID_SETTINGS_HEARING_THRESHOLD   , hearing_threshold_texts  [language])
+    update_text    (vb, ID_SETTINGS_VOLUME_REDUCTION    , settings_volume_reduction[language])
+    update_text    (vb, ID_SETTINGS_PITCH               , settings_pitch           [language])
+    update_text    (vb, ID_SETTINGS_MATRIX_SIZE         , settings_matrix_size     [language])
+    update_text    (vb, ID_SETTINGS_SEARCH_ROWS         , settings_search_rows     [language])
+    update_items   (vb, ID_SETTINGS_INTERVAL            , settings_interval        [language])
+    update_items   (vb, ID_SETTINGS_TUNING              , settings_tuning          [language])
+    update_items   (vb, ID_SETTINGS_TUNING_NOTE         , settings_tuning_note     [language])
     if language == "de" then vb.views.popup_language.value = 1
                         else vb.views.popup_language.value = 2
     end
