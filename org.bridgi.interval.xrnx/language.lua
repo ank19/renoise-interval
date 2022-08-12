@@ -210,7 +210,7 @@ local function dissonance_details(dissonance, settings)
     return nil
 end
 
-local function update_interval(vb, data, settings)
+local function update_interval(vb, data, settings, cache)
     local language      = settings.language.value
     local view          = settings.view_type.value
     local interval_data = data.interval_data
@@ -229,11 +229,11 @@ local function update_interval(vb, data, settings)
             if not is_chord_column then
                 local wrapper = interval_data[row][col]
                 if wrapper then
-                    interval, halftones, octave, display_interval, a, b, cents, p, f1, f2, dissonance = wrapper()
-                    trace_log("Calculated: "..tostring(interval)..","..tostring(halftones)..","..tostring(octave)..","..tostring(display_interval)..","..tostring(a)..","..tostring(b)..","..tostring(cents)..","..tostring(p)..","..tostring(f1)..","..tostring(f2)..","..tostring(dissonance))
+                    interval, halftones, octave, display_interval, a, b, cents, p, f1, f2, dissonance = wrapper(cache)
                 end
             else
-                dissonance = interval_data[row][col]
+                local wrapper = interval_data[row][col]
+                dissonance = wrapper(cache)
             end
             dissonance_text, dissonance_color = dissonance_details(dissonance, settings)
             if interval then
@@ -316,5 +316,6 @@ function update_interface(vb, settings, data)
     if language == "de" then vb.views.popup_language.value = 1
                         else vb.views.popup_language.value = 2
     end
-    update_interval(vb, data, settings)
+    local cache = {}
+    update_interval(vb, data, settings, cache)
 end
