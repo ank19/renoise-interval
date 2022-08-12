@@ -247,13 +247,14 @@ end
 
 function note_button(vb, per_column_width, row, col, calculation_results)
     local not_a_note = not is_note(calculation_results.value[row][col])
+    local is_marked = calculation_results.marker[row][col]
     if not_a_note then
         return vb:row { style = "body",
                         vb:horizontal_aligner { mode  = "center",
                                                 width = per_column_width,
                                                 vb:button { width  = per_column_width,
                                                             height = 40,
-                                                            color  = COLOR_NO_NOTE,
+                                                            color  = is_marked and COLOR_NO_NOTE_MARKER or COLOR_NO_NOTE,
                                                             active = false,
                                                             text   = "\n---\n"}}}
     else
@@ -267,7 +268,7 @@ function note_button(vb, per_column_width, row, col, calculation_results)
                                                 width = per_column_width,
                                                 vb:button { width  = per_column_width,
                                                             height = 40,
-                                                            color  = COLOR_IS_NOTE,
+                                                            color  = is_marked and COLOR_IS_NOTE_MARKER or COLOR_IS_NOTE,
                                                             active = false,
                                                             text   = note_text}}}
     end
