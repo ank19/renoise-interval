@@ -233,7 +233,9 @@ local function update_interval(vb, data, settings, cache)
                 end
             else
                 local wrapper = interval_data[row][col]
-                dissonance = wrapper(cache)
+                if wrapper then
+                    dissonance = wrapper(cache)
+                end
             end
             dissonance_text, dissonance_color = dissonance_details(dissonance, settings)
             if interval then
