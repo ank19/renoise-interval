@@ -141,6 +141,10 @@ settings_search_rows = {}
 settings_search_rows["de"] = "Suchweite"
 settings_search_rows["en"] = "Search range"
 
+settings_chord_calc = {}
+settings_chord_calc["de"] = "Akkorde"
+settings_chord_calc["en"] = "Chords"
+
 settings_pitch = {}
 settings_pitch["de"] = "Kammerton a' (A4)"
 settings_pitch["en"] = "Diaspon a' (A4)"
@@ -312,6 +316,7 @@ function update_interface(vb, settings, data)
     update_text    (vb, ID_SETTINGS_PITCH               , settings_pitch           [language])
     update_text    (vb, ID_SETTINGS_MATRIX_SIZE         , settings_matrix_size     [language])
     update_text    (vb, ID_SETTINGS_SEARCH_ROWS         , settings_search_rows     [language])
+    update_text    (vb, ID_SETTINGS_CHORD_CALC          , settings_chord_calc      [language])
     update_items   (vb, ID_SETTINGS_INTERVAL            , settings_interval        [language])
     update_items   (vb, ID_SETTINGS_TUNING              , settings_tuning          [language])
     update_items   (vb, ID_SETTINGS_TUNING_NOTE         , settings_tuning_note     [language])

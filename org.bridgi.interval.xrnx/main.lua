@@ -12,7 +12,7 @@ renoise.tool():add_keybinding { name   = "Global:Tools:Interval Calculator",
 --  ___] |___  |   |  | | \| |__] ___]
 
 local settings = renoise.Document.create("IntervalCalculatorSettings") { view_type              =   1,
-                                                                         language               = "de",
+                                                                         language               = "en",
                                                                          max_delta              =  30,
                                                                          max_lines              =   8,
                                                                          dissonance_threshold_1 =   3.5,
@@ -22,7 +22,8 @@ local settings = renoise.Document.create("IntervalCalculatorSettings") { view_ty
                                                                          tuning                 =   1,
                                                                          tuning_note            =   3,
                                                                          pitch                  = 440,
-                                                                         volume_reduction       =   0.20}
+                                                                         volume_reduction       =   0.20,
+                                                                         chord_calculation      = true}
 --  ____ ____ ___ _ ____ _  _ ____ _       ____ ___  ___  ____ ____ _  _ _ _  _ ____ ___ _ ____ _  _
 --  |__/ |__|  |  | |  | |\ | |__| |       |__| |__] |__] |__/ |  |  \/  | |\/| |__|  |  | |  | |\ |
 --  |  \ |  |  |  | |__| | \| |  | |___    |  | |    |    |  \ |__| _/\_ | |  | |  |  |  | |__| | \|

@@ -121,6 +121,8 @@ ID_SETTINGS_DEBUG                = "settings_debug"
 ID_ELEMENT                       = "element"
 ID_STATUS_BAR                    = "status_bar"
 ID_COUNTERPOINT_BAR              = "counterpoint_bar"
+ID_SETTINGS_CHORD_CALC           = "chord_calculation"
+ID_SETTINGS_CHORD_CALC_BOX       = "chord_calculation_box"
 
 --   _______ _______ _______ _______ _     _ _______
 --   |______    |    |_____|    |    |     | |______

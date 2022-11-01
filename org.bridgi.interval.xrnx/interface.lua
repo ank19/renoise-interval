@@ -12,15 +12,6 @@ local DEFAULT_MINI_CONTROL_HEIGHT  = renoise.ViewBuilder.DEFAULT_MINI_CONTROL_HE
 function configuration_section(vb, settings, calculation_results)
     return vb:row { vb:column { vb:row {
                 vb:space  { width    = 5 },
-                vb:row {
-                    style = "invisible",
-                    vb:text   { id       = ID_SETTINGS,
-                                width    = 100,
-                                style    = "strong",
-                                text     = "???" },
-
-                },
-                vb:space  { width    = 5 },
                 vb:switch { id       = ID_SETTINGS_INTERVAL,
                             width    = 400,
                             bind     = settings.view_type,
@@ -29,7 +20,7 @@ function configuration_section(vb, settings, calculation_results)
                                            update_interface(vb, settings, calculation_results)
                                        end } },
         vb:row {
-        vb:space  { width    = 110 },
+        vb:space  { width    = 5 },
         vb:row {
             vb:popup {id       = ID_SETTINGS_TUNING,
                       width    = 150,
@@ -47,13 +38,22 @@ function configuration_section(vb, settings, calculation_results)
                         end },
             vb:popup  { id       = "popup_language",
                         items    = {"Deutsch","English"},
-                        width    = 130,
+                        width    = 100,
                         notifier = function(new_index)
                             if new_index == 1 then settings.language.value = "de"
                             else settings.language.value = "en"
                             end
                             update_interface(vb, settings, calculation_results)
-                        end }
+                        end },
+            vb:space  { width    = 37 },
+            vb:text   { id       = ID_SETTINGS_CHORD_CALC,
+                        text    = "???" },
+            vb:space  { width    = 5 },
+            vb:checkbox{ id       = ID_SETTINGS_CHORD_CALC_BOX,
+                         bind     = settings.chord_calculation,
+                         notifier = function(new_index)
+                             update_interface(vb, settings, calculation_results)
+                         end },
             }},
             vb:space  { width    = 20 },
             vb:rotary { min      =  1.0,
@@ -180,7 +180,7 @@ function configuration_section(vb, settings, calculation_results)
         }
 end
 
-function table_header(vb, no_of_note_columns, per_column_width)
+function table_header(vb, no_of_note_columns, per_column_width, settings)
     local head_aligner = vb:horizontal_aligner { width = no_of_note_columns * 40,
                                                  mode  = "distribute" }
     local head_row = vb:row { width = no_of_note_columns * 40,
@@ -209,23 +209,25 @@ function table_header(vb, no_of_note_columns, per_column_width)
             head_aligner:add_child(column)
         end
     end
-    head_aligner:add_child(vb:column { vb:button { width  = 10,
-                                                   height = HEADER_HEIGHT,
-                                                   active = false,
-                                                   color  = COLOR_HEADER_2,
-                                                   text   = ""}})
-    head_aligner:add_child(vb:column { vb:button { id     = ID_HEADER_CHORD_ACTUAL,
-                                                   width  = per_column_width,
-                                                   height = HEADER_HEIGHT,
-                                                   active = false,
-                                                   color  = COLOR_HEADER_1,
-                                                   text   = "???"}})
-    head_aligner:add_child(vb:column { vb:button { id     = ID_HEADER_CHORD_LINGER,
-                                                   width  = per_column_width,
-                                                   height = HEADER_HEIGHT,
-                                                   active = false,
-                                                   color  = COLOR_HEADER_1,
-                                                   text   = "???"}})
+    if settings.chord_calculation.value then
+        head_aligner:add_child(vb:column { vb:button { width  = 10,
+                                                       height = HEADER_HEIGHT,
+                                                       active = false,
+                                                       color  = COLOR_HEADER_2,
+                                                       text   = ""}})
+        head_aligner:add_child(vb:column { vb:button { id     = ID_HEADER_CHORD_ACTUAL,
+                                                       width  = per_column_width,
+                                                       height = HEADER_HEIGHT,
+                                                       active = false,
+                                                       color  = COLOR_HEADER_1,
+                                                       text   = "???"}})
+        head_aligner:add_child(vb:column { vb:button { id     = ID_HEADER_CHORD_LINGER,
+                                                       width  = per_column_width,
+                                                       height = HEADER_HEIGHT,
+                                                       active = false,
+                                                       color  = COLOR_HEADER_1,
+                                                       text   = "???"}})
+    end
     return head_row
 end
 
@@ -284,13 +286,17 @@ function create_view(vb, settings, data)
     local status             = data.status
 
     local base_width          = 1700
-    local per_column_width    = base_width / (no_of_note_columns * 2 + 2)
+    local no_of_columns       = no_of_note_columns * 2
+    if settings.chord_calculation.value then
+        no_of_columns = no_of_columns + 2
+    end
+    local per_column_width    = base_width / no_of_columns
     local total_width         = (no_of_note_columns + 1) * per_column_width
     local configuration_view  = configuration_section(vb, settings, data)
     local matrix_view         = vb:column { width = total_width, margin = CONTENT_MARGIN }
     local dialog_content      = vb:column { width = total_width, configuration_view, matrix_view }
 
-    dialog_content:add_child(table_header(vb, no_of_note_columns, per_column_width))
+    dialog_content:add_child(table_header(vb, no_of_note_columns, per_column_width, settings))
     dialog_content:add_child(vb:row{ height=5, vb:space {}})
 
     for rows = 1, #notes do
@@ -324,15 +330,18 @@ function create_view(vb, settings, data)
             end
         end
 
-        -- Add a small separator between the main matrix and the chord columns
-        aligner:add_child( vb:column { vb:button { width  = 10,
-                                                   height = 50,
-                                                   active = false,
-                                                   color  = COLOR_BLACK,
-                                                   text   = "\n\n"}})
-        -- Add two chord columns
-        aligner:add_child( vb:column { interval_button(vb, per_column_width, rows, (no_of_note_columns * 2 + 1)) })
-        aligner:add_child( vb:column { interval_button(vb, per_column_width, rows, (no_of_note_columns * 2 + 2)) })
+        if settings.chord_calculation.value then
+
+            -- Add a small separator between the main matrix and the chord columns
+            aligner:add_child( vb:column { vb:button { width  = 10,
+                                                       height = 50,
+                                                       active = false,
+                                                       color  = COLOR_BLACK,
+                                                       text   = "\n\n"}})
+            -- Add two chord columns
+            aligner:add_child( vb:column { interval_button(vb, per_column_width, rows, (no_of_note_columns * 2 + 1)) })
+            aligner:add_child( vb:column { interval_button(vb, per_column_width, rows, (no_of_note_columns * 2 + 2)) })
+        end
         dialog_content:add_child(row)
     end
 
