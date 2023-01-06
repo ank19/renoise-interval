@@ -103,7 +103,7 @@ dissonance_threshold_text["en"] = "Sonance thresholds"
 
 hearing_threshold_texts = {}
 hearing_threshold_texts["de"] = "Hörschwelle"
-hearing_threshold_texts["en"] = "Hearing threshold"
+hearing_threshold_texts["en"] = "Audibility"
 
 chord_header_actual = {}
 chord_header_actual["de"] = "Akkord"
@@ -130,16 +130,16 @@ settings_tuning_note["de"] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "
 settings_tuning_note["en"] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"}
 
 settings_volume_reduction = {}
-settings_volume_reduction["de"] = "Dämpfung Nachklang"
-settings_volume_reduction["en"] = "Lingering damping"
+settings_volume_reduction["de"] = "Dämpfung" -- Nachklang
+settings_volume_reduction["en"] = "Damping" -- Lingering
 
 settings_matrix_size = {}
-settings_matrix_size["de"] = "Notenzeilen"
-settings_matrix_size["en"] = "Note rows"
+settings_matrix_size["de"] = "Zeilen"
+settings_matrix_size["en"] = "Rows"
 
 settings_search_rows = {}
 settings_search_rows["de"] = "Suchweite"
-settings_search_rows["en"] = "Search range"
+settings_search_rows["en"] = "Range"
 
 settings_chord_calc = {}
 settings_chord_calc["de"] = "Akkorde"

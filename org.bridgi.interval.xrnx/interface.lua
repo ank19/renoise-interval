@@ -13,7 +13,7 @@ function configuration_section(vb, settings, calculation_results)
     return vb:row { vb:column { vb:row {
                 vb:space  { width    = 5 },
                 vb:switch { id       = ID_SETTINGS_INTERVAL,
-                            width    = 400,
+                            width    = 270,
                             bind     = settings.view_type,
                             notifier = function(new_index)
                                            settings.view_type.value = new_index
@@ -23,7 +23,7 @@ function configuration_section(vb, settings, calculation_results)
         vb:space  { width    = 5 },
         vb:row {
             vb:popup {id       = ID_SETTINGS_TUNING,
-                      width    = 150,
+                      width    = 100,
                       bind     = settings.tuning,
                       notifier = function(new_index)
                           settings.tuning.value = new_index
@@ -31,26 +31,27 @@ function configuration_section(vb, settings, calculation_results)
                       end }
             },
             vb:popup  { id       = ID_SETTINGS_TUNING_NOTE,
-                        width    = 50,
+                        width    = 40,
                         bind     = settings.tuning_note,
                         notifier = function(new_index)
                             update_interface(vb, settings, calculation_results)
                         end },
             vb:popup  { id       = "popup_language",
                         items    = {"Deutsch","English"},
-                        width    = 100,
+                        width    = 70,
                         notifier = function(new_index)
                             if new_index == 1 then settings.language.value = "de"
                             else settings.language.value = "en"
                             end
                             update_interface(vb, settings, calculation_results)
                         end },
-            vb:space  { width    = 37 },
-            vb:text   { id       = ID_SETTINGS_CHORD_CALC,
-                        text    = "???" },
             vb:space  { width    = 5 },
+            vb:text   { id       = ID_SETTINGS_CHORD_CALC,
+                        width    = 20,
+                        text    = "???" },
             vb:checkbox{ id       = ID_SETTINGS_CHORD_CALC_BOX,
                          bind     = settings.chord_calculation,
+                         width    = 15,
                          notifier = function(new_index)
                              update_interface(vb, settings, calculation_results)
                          end },
@@ -285,7 +286,7 @@ function create_view(vb, settings, data)
     local counterpoint       = data.counterpoint
     local status             = data.status
 
-    local base_width          = 1700
+    local base_width          = 1024
     local no_of_columns       = no_of_note_columns * 2
     if settings.chord_calculation.value then
         no_of_columns = no_of_columns + 2

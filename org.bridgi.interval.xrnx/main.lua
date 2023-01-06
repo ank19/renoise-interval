@@ -13,7 +13,7 @@ renoise.tool():add_keybinding { name   = "Global:Tools:Interval Calculator",
 
 local settings = renoise.Document.create("IntervalCalculatorSettings") { view_type              =   1,
                                                                          language               = "en",
-                                                                         max_delta              =  30,
+                                                                         max_delta              =  13,
                                                                          max_lines              =   8,
                                                                          dissonance_threshold_1 =   3.5,
                                                                          dissonance_threshold_2 =   6.5,
@@ -367,6 +367,12 @@ local function look_back(lines, pattern_track, track, track_idx, position, col_i
       if c_line_idx < 1 or c_delta + delta > settings.max_delta.value then return nil, nil, nil, nil end
     end
     local c_line = pattern_track.lines[c_line_idx]
+    if not c_line then
+      trace_log("Strange issue at line "
+              ..tostring(c_line_idx)
+              .." in pattern "..tostring(c_seq_idx)
+              ..": Cannot retrieve line data. Plugin is going to throw an exception")
+    end
     if has_note(c_line, track) then
       local position = position_key(c_seq_idx, c_line_idx)
       local line = { line = c_line, delta = c_delta + delta }
