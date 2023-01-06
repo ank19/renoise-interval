@@ -148,6 +148,10 @@ Further reference:
 - No guarantee is given for correctness
 - Specific renoise(tm) effects like pitch level, etc. are not considered
 
+# Download
+
+Download current release at the [release page](https://github.com/ank19/renoise-interval/releases)
+
 # License
 
 [GPL v3](org.bridgi.interval.xrnx/gpl-3.0.md)
