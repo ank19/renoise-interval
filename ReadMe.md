@@ -135,9 +135,10 @@ cross-reading this documentation.
 
 Further reference:
 >Stolzenburg, Frieder.
->Harmony Perception by Periodicity Detection (2013).
+>[Harmony Perception by Periodicity Detection (2013)](https://www.researchgate.net/publication/242331341_Harmony_Perception_by_Periodicity_Detection)
 >Journal of Mathematics and Music.
 >9.10.1080/17459737.2015.1033024.
+
 
 # Limitations
 
