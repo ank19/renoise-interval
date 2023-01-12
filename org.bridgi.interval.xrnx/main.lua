@@ -30,7 +30,7 @@ local settings = renoise.Document.create("IntervalCalculatorSettings") { view_ty
 
 -- Approximate fraction algorithm from
 --   Harmony Perception by Periodicity Detection
---   Article in Journal of Mathematics and Music · June 2013
+--   Article in Journal of Mathematics and Music · March 2015
 --   DOI: 10.1080/17459737.2015.1033024
 --   Frieder Stolzenburg
 local function approximate_irrational(irrational, max)

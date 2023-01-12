@@ -133,9 +133,8 @@ My special thanks go to Werner Brefeld for his elaboration of the
 (in German only) and his willing and extensive support regarding questions, and for
 cross-reading this documentation.
 
-Further reference:
 >Stolzenburg, Frieder.
->[Harmony Perception by Periodicity Detection (2013)](https://www.researchgate.net/publication/242331341_Harmony_Perception_by_Periodicity_Detection)
+>[Harmony Perception by Periodicity Detection (March 2015)](https://www.researchgate.net/publication/242331341_Harmony_Perception_by_Periodicity_Detection)
 >Journal of Mathematics and Music.
 >9.10.1080/17459737.2015.1033024.
 
