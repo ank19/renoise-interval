@@ -97,6 +97,15 @@ local function fallback_frequency(frequency1, frequency2)
   return a, b
 end
 
+local function dissonance_value(frequency1, frequency2, octaves, volume)
+  local octave_mod = math.max(0, octaves - 1)
+  local dissonance = math.sqrt(2) ^ octave_mod * ((frequency1 * frequency2) ^ volume)
+  trace_log("Calculated sqrt(2)^"..octave_mod
+          .."*(("..frequency1.."*"..frequency2..")^"..tostring(volume)
+          .."="..tostring(dissonance));
+  return dissonance
+end
+
 --  ___  _   _ ___ _  _ ____ ____ ____ ____ ____ ____ _  _
 --  |__]  \_/   |  |__| |__| | __ |  | |__/ |___ |__| |\ |
 --  |      |    |  |  | |  | |__] |__| |  \ |___ |  | | \|
@@ -169,8 +178,7 @@ local function pythagorean_interval(note1, note2, interval, octaves, volume, cac
     trace_log("    Cannot approximate irrational for interval no. "..tostring(interval + 1)..": "..p.."; using frequency ratio to it's shortest terms")
     a, b = fallback_frequency(frequency1, frequency2)
   end
-  local dissonance = math.sqrt(2) ^ octaves * ((a * b) ^ volume)
-  return a, b, cents, p, frequency1, frequency2, dissonance
+  return a, b, cents, p, frequency1, frequency2, dissonance_value(a, b, octaves, volume)
 end
 
 --  ____ ____ _  _ ____ _       ___ ____ _  _ ___  ____ ____ ____ _  _ ____ _  _ ___
@@ -199,8 +207,7 @@ local function equal_interval(note1, note2, interval, octaves, volume, cache)
     trace_log("    Cannot approximate irrational for interval no. "..tostring(interval + 1)..": "..p.."; using frequency ratio to it's shortest terms")
     a, b = fallback_frequency(frequency1, frequency2)
   end
-  local dissonance = math.sqrt(2) ^ octaves * ((a * b) ^ volume)
-  return a, b, cents, p, frequency1, frequency2, dissonance
+  return a, b, cents, p, frequency1, frequency2, dissonance_value(a, b, octaves, volume)
 end
 
 --  ___  _  _ ____ ____    _ _  _ ___ ____ ____ _  _ ____ _    ____
@@ -213,8 +220,7 @@ local function pure_interval(note1, note2, interval, octaves, volume, cache)
   local a, b       = unpack(PURE_INTERVALS[interval + 1])
   local cents      = 1200 * (octaves + math.log(a / b) / math.log(2))
   trace_log("Using constant interval ratio "..a.."/"..b.." (pure intervals)");
-  local dissonance = math.sqrt(2) ^ octaves * ((a * b) ^ volume)
-  return a, b, cents, nil, nil, nil, dissonance
+  return a, b, cents, nil, nil, nil, dissonance_value(a, b, octaves, volume)
 end
 
 --  ____ ____ _  _ ____ ____ _ ____    _ _  _ ___ ____ ____ _  _ ____ _       ____ _  _ _  _ ____ ___ _ ____ _  _ ____
