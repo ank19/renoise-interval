@@ -222,7 +222,7 @@ end
 --  |__] |___ | \| |___ |  \ | |___    | | \|  |  |___ |  \  \/  |  | |___    |    |__| | \| |___  |  | |__| | \| ___]
 
 -- Calculate basic interval properties
-local function interval_properties(note1, note2, volume1, volume2)
+function interval_properties(note1, note2, volume1, volume2)
   local halftones = note2 - note1
   local delta     = math.abs(halftones)
   local octaves   = math.floor(math.abs(halftones) / 12)
@@ -235,8 +235,8 @@ local function interval_properties(note1, note2, volume1, volume2)
   if note1 ~= note2 and interval == 0 then
     interval = 12
   end
-  local display_interval = interval -- Additional intervals Ninth...Fifteenth
-  if delta >= 13 and delta <= 24 then
+  local display_interval = interval
+  if delta >= 13 and delta <= 24 then -- Additional intervals Ninth...Fifteenth
     display_interval = delta
   end
   return interval, function(cache)
@@ -260,17 +260,19 @@ end
 -- The calculation is (a1 * ... * an * b1 * ... * bn) ^ ( (1 / n ) * volume percentage distributed on two-tones)
 -- where n is the number of intervals and a/ b the frequency ratios to lowest terms
 local function chord_dissonance(volume, cache, ...)
-  if not arg or arg.n == 0 then
+  local tmp = {...}
+  local n = select('#', ...)
+  if not ... or n == 0 then
     return nil
   end
-  trace_log("Calculating chord dissonance for "..arg.n.." notes and volume "..tostring(volume))
+  trace_log("Calculating chord dissonance for "..n.." notes and volume "..tostring(volume))
   local intervals = {}
-  for i1, _ in ipairs(arg) do
-    for i2, _ in ipairs(arg) do
+  for i1, _ in ipairs(tmp) do
+    for i2, _ in ipairs(tmp) do
       if i2 > i1 then -- Calculate ratio between note at index i1 and note at index i2
         local overall_ratio = { 1, 1 }
         for i3 = i1 + 1, i2 do
-          local _, wrapper = interval_properties(arg[i3].note, arg[i3 - 1].note, volume, volume)
+          local _, wrapper = interval_properties(tmp[i3].note, tmp[i3 - 1].note, volume, volume)
           local _, _, _, _, a, b, _, _, _, _, _ = wrapper(cache)
           overall_ratio[1] = overall_ratio[1] * a
           overall_ratio[2] = overall_ratio[2] * b
@@ -287,13 +289,15 @@ local function chord_dissonance(volume, cache, ...)
   for _, interval in ipairs(intervals) do
     dissonance = dissonance * interval[1] * interval[2]
   end
-  return dissonance ^ (volume / (arg.n - 1))
+  return dissonance ^ (volume / (n - 1))
 end
 
 -- Calculate dissonance for a chord with notes not necessarily having the same volume
 -- Basically the chord is dissected into chords having the same level of volume, again using the function above.
 local function dissect_chord(depth,cache,...)
-  if not arg or arg.n == 0 then
+  local tmp = {...}
+  local n = select('#', ...)
+  if not ... or n == 0 then
     return nil
   end
   if not depth then
@@ -302,7 +306,7 @@ local function dissect_chord(depth,cache,...)
   local filtered    = {}
   local volume_only = {}
   local tmp_trace   = ""
-  for _, a in ipairs(arg) do
+  for _, a in ipairs(tmp) do
     if a.volume_percentage > 0 then table.insert(filtered   , a       )
                                     table.insert(volume_only, a.volume_percentage)
                                     tmp_trace = tmp_trace.." "..tostring(a.note).."("..tostring(a.volume_percentage)..") "
@@ -326,8 +330,9 @@ local function dissect_chord(depth,cache,...)
 end
 
 local function dissect_chord_wrapper(...)
+  local tmp = {...}
   return function(cache)
-    return dissect_chord(1, cache, unpack(arg))
+    return dissect_chord(1, cache, unpack(tmp))
   end
 end
 
