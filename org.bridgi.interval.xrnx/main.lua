@@ -33,7 +33,7 @@ local settings = renoise.Document.create("IntervalCalculatorSettings") { view_ty
 --   Article in Journal of Mathematics and Music · March 2015
 --   DOI: 10.1080/17459737.2015.1033024
 --   Frieder Stolzenburg
-local function approximate_irrational(irrational, max)
+function approximate_irrational(irrational, max)
   local m = max and max or math.huge
   local p = settings.hearing_threshold.value
   local x = irrational
@@ -62,9 +62,7 @@ local function approximate_irrational(irrational, max)
     end
     local ambm = am / bm
     if x1 <= ambm and ambm <= x2 then
-      trace_log("Approximated interval ".. irrational
-              .." with hearing threshold "..tostring(p)
-              .." to "..tostring(am).."/"..tostring(bm))
+      trace_log("Approximated ".. irrational.." with threshold "..p.." to "..am.."/"..bm)
 
       return { am, bm }
     elseif x2 < ambm then
@@ -84,10 +82,12 @@ local function approximate_irrational(irrational, max)
 end
 
 -- Wrapper function for approximation of already known rational
+--    ... in order to take hearing threshold into consideration
 local function approximate_rational(a, b, max)
   return approximate_irrational(a / b, max)
 end
 
+-- In case the approximation fails; simply use frequency ration to it's shortest terms
 local function fallback_frequency(frequency1, frequency2)
   local a = round(math.max(frequency1, frequency2),  0)
   local b = round(math.min(frequency1, frequency2),  0)
@@ -97,12 +97,13 @@ local function fallback_frequency(frequency1, frequency2)
   return a, b
 end
 
-local function dissonance_value(frequency1, frequency2, octaves, volume)
-  local octave_mod = math.max(0, octaves - 1)
-  local dissonance = math.sqrt(2) ^ octave_mod * ((frequency1 * frequency2) ^ volume)
-  trace_log("Calculated sqrt(2)^"..octave_mod
-          .."*(("..frequency1.."*"..frequency2..")^"..tostring(volume)
-          .."="..tostring(dissonance));
+-- Calculate dissonance value
+--     The calculation is (a1 * ... * an * b1 * ... * bn) ^ ( (1 / n ) * volume percentage distributed on two-tones)
+--     where n is the number of intervals and a/ b the frequency ratios to lowest terms
+local function dissonance_value(a, b, octaves, volume)
+  local octave_mod = math.max(0, math.abs(octaves) - 1)
+  local dissonance = math.sqrt(2) ^ octave_mod * ((a * b) ^ volume)
+  trace_log("Calculated sqrt(2)^"..octave_mod.."*((".. a .."*".. b ..")^"..volume.."="..dissonance);
   return dissonance
 end
 
@@ -113,7 +114,7 @@ end
 -- Create frequency table for Pythagorean tuning on reference octave
 -- Takes tuning note and pitch into account
 -- Algorithm as outlined on https://en.wikipedia.org/wiki/Pythagorean_tuning
-local function pythagorean_frequencies()
+function pythagorean_frequencies()
   local cycle_of_fifths = CYCLE_OF_FIFTHS[settings.tuning_note.value]
   -- Get index of a' (in renoise A4 = 57 = 4 * 12 + 9)
   local pitch_note_i
@@ -153,7 +154,7 @@ local function pythagorean_frequencies()
 end
 
 -- Use the frequency set for the reference octave to calculate a specific note frequency
-local function pythagorean_frequency(frequencies, note)
+function pythagorean_frequency(frequencies, note)
   trace_log("Calculating Pythagorean frequency for note "..note)
   local octave_mod = math.floor(math.abs(note) / 12) - 4
   local base = frequencies[note % 12 + 1]
@@ -164,7 +165,7 @@ local function pythagorean_frequency(frequencies, note)
 end
 
 -- Calculate interval properties
-local function pythagorean_interval(note1, note2, interval, octaves, volume, cache)
+function pythagorean_interval(note1, note2, interval, octaves, volume, cache)
   trace_log("Calculating interval data from "..note1.." to "..note2.." in Pythagorean temperament");
   local frequencies = cache.frequencies and cache.frequencies or pythagorean_frequencies()
   cache.frequencies = frequencies
@@ -175,7 +176,7 @@ local function pythagorean_interval(note1, note2, interval, octaves, volume, cac
                 or (1200 * math.log(p) / math.log(2))
   local a, b = unpack(approximate_irrational(p))
   if not a or not b then
-    trace_log("    Cannot approximate irrational for interval no. "..tostring(interval + 1)..": "..p.."; using frequency ratio to it's shortest terms")
+    trace_log("Cannot approximate irrational "..p.."; using frequency ratio to it's shortest terms")
     a, b = fallback_frequency(frequency1, frequency2)
   end
   return a, b, cents, p, frequency1, frequency2, dissonance_value(a, b, octaves, volume)
@@ -186,12 +187,12 @@ end
 --  |___ |_\| |__| |  | |___     |  |___ |  | |    |___ |  \ |  | |  | |___ | \|  |
 
 -- Calculate a specific note frequency based on the pitch setting
-local function equal_frequency(note)
+function equal_frequency(note)
   trace_log("Calculating equal temperament frequency for note "..note)
   -- Pitch node in renoise shifted by +8 (instead of 49)
   -- https://en.wikipedia.org/wiki/12_equal_temperament
   local frequency = settings.pitch.value * ((2 ^ (1 / 12)) ^ (note - 57))
-  trace_log("  Final frequency is "..frequency.." based on "..settings.pitch.value)
+  trace_log("Final frequency is "..frequency.." based on "..settings.pitch.value)
   return frequency
 end
 
@@ -204,7 +205,7 @@ local function equal_interval(note1, note2, interval, octaves, volume, cache)
   local cents      = math.abs(note2 - note1) * 100
   local a, b       = unpack(approximate_irrational(p))
   if not a or not b then
-    trace_log("    Cannot approximate irrational for interval no. "..tostring(interval + 1)..": "..p.."; using frequency ratio to it's shortest terms")
+    trace_log("Cannot approximate irrational for interval no. "..(interval + 1)..": "..p.."; using frequency ratio to it's shortest terms")
     a, b = fallback_frequency(frequency1, frequency2)
   end
   return a, b, cents, p, frequency1, frequency2, dissonance_value(a, b, octaves, volume)
@@ -232,6 +233,7 @@ function interval_properties(note1, note2, volume1, volume2)
   local halftones = note2 - note1
   local delta     = math.abs(halftones)
   local octaves   = math.floor(math.abs(halftones) / 12)
+  trace_log("Interval between "..note1.." and "..note2.." is spanning "..octaves.." octaves")
   local interval  = delta % 12
   local t1, t2    = unpack(add_volume_percentage({ volume = volume1 }, { volume = volume2 }))
   local volume    = math.min(t1.volume_percentage, t2.volume_percentage) -- The reasoning here is that the note having
@@ -242,7 +244,7 @@ function interval_properties(note1, note2, volume1, volume2)
     interval = 12
   end
   local display_interval = interval
-  if delta >= 13 and delta <= 24 then -- Additional intervals Ninth...Fifteenth
+  if delta >= 13 and delta <= 24 then -- Additional intervals Ninth...Fifteenth just for displaying
     display_interval = delta
   end
   return interval, function(cache)
@@ -262,45 +264,93 @@ end
 --  |___ |  | |__| |  \ |__/    |__/ | ___] ___] |__| | \| |  | | \| |___ |___
 
 
+-- Calculate ratios between two-tones
+local function chord_ratios(cache, ...)
+  local tmp = {...}
+  local n = select('#', ...)
+  if not ... or n == 0 then
+    return nil
+  end
+  trace_log("Calculating ratios for "..n.." notes")
+  local ratios = {}
+  for i1, _ in ipairs(tmp) do
+    for i2, _ in ipairs(tmp) do
+      if i2 > i1 then
+        -- Calculate ratio between note at index i1 and note at index i2
+        local overall_ratio = { 1, 1 }
+        for i3 = i1 + 1, i2 do
+          local _, wrapper = interval_properties(tmp[i3].note, tmp[i3 - 1].note, 0, 0)
+          local _, _, _, _, a, b, _, _, _, _, _ = wrapper(cache)
+          overall_ratio[1] = overall_ratio[1] * a
+          overall_ratio[2] = overall_ratio[2] * b
+        end
+        -- Shorten fractions to it's lowest terms
+        trace_log("Overall ratio between "..tmp[i1].note.." and "..tmp[i2].note..": "..overall_ratio[1].."/"..overall_ratio[2])
+        local gcd = greatest_common_divisor(overall_ratio[1], overall_ratio[2])
+        overall_ratio[1] = overall_ratio[1] / gcd
+        overall_ratio[2] = overall_ratio[2] / gcd
+        trace_log("Overall ratio (shortened) between "..tmp[i1].note.." and "..tmp[i2].note..": "..overall_ratio[1].."/"..overall_ratio[2])
+        ratios[i1 * n + i2] = overall_ratio
+      end
+    end
+  end
+  return ratios
+end
+
+-- TBD: Rework chord dissonance
+-- TBD: Use known frequency ratios instead of interval combinations
+-- TBD: Rewrite loops
+
 -- Calculate dissonance for a chord with notes having the same level of volume
--- The calculation is (a1 * ... * an * b1 * ... * bn) ^ ( (1 / n ) * volume percentage distributed on two-tones)
--- where n is the number of intervals and a/ b the frequency ratios to lowest terms
+--     The calculation is (a1 * ... * an * b1 * ... * bn) ^ ( (1 / n ) * volume percentage distributed on two-tones)
+--     where n is the number of intervals and a/ b the frequency ratios to lowest terms
 local function chord_dissonance(volume, cache, ...)
   local tmp = {...}
   local n = select('#', ...)
   if not ... or n == 0 then
     return nil
   end
-  trace_log("Calculating chord dissonance for "..n.." notes and volume "..tostring(volume))
-  local intervals = {}
+  trace_log("Calculating chord dissonance for "..n.." notes and volume "..volume)
+  local ratios = {}
   for i1, _ in ipairs(tmp) do
     for i2, _ in ipairs(tmp) do
-      if i2 > i1 then -- Calculate ratio between note at index i1 and note at index i2
+      -- Calculate ratio between note at index i1 and note at index i2
+      if i2 > i1 then
         local overall_ratio = { 1, 1 }
         for i3 = i1 + 1, i2 do
           local _, wrapper = interval_properties(tmp[i3].note, tmp[i3 - 1].note, volume, volume)
           local _, _, _, _, a, b, _, _, _, _, _ = wrapper(cache)
+          trace_log("Got ratio between "..tmp[i3 - 1].note.." and "..tmp[i3].note..": "..a.."/"..b)
           overall_ratio[1] = overall_ratio[1] * a
           overall_ratio[2] = overall_ratio[2] * b
         end
         -- Shorten fractions to it's lowest terms
+        trace_log("Overall ratio (original) between "..tmp[i1].note.." and "..tmp[i2].note..": "..overall_ratio[1].."/"..overall_ratio[2])
         local gcd = greatest_common_divisor(overall_ratio[1], overall_ratio[2])
         overall_ratio[1] = overall_ratio[1] / gcd
         overall_ratio[2] = overall_ratio[2] / gcd
-        table.insert(intervals, overall_ratio)
+        trace_log("Overall ratio (shortended) between "..tmp[i1].note.." and "..tmp[i2].note..": "..overall_ratio[1].."/"..overall_ratio[2])
+        table.insert(ratios, overall_ratio)
       end
     end
   end
   local dissonance = 1
-  for _, interval in ipairs(intervals) do
-    dissonance = dissonance * interval[1] * interval[2]
+  local tmp_trace = ""
+  for _, ratio in ipairs(ratios) do
+    dissonance = dissonance * ratio[1] * ratio[2]
+    if tmp_trace ~= "" then
+      tmp_trace = tmp_trace.." * "
+    end
+    tmp_trace = tmp_trace.. ratio[1].."*".. ratio[2]
   end
-  return dissonance ^ (volume / (n - 1))
+  local result = dissonance ^ (volume / (n - 1))
+  trace_log("("..tmp_trace..")^("..volume.."/("..n.."-1)) = "..result)
+  return result
 end
 
 -- Calculate dissonance for a chord with notes not necessarily having the same volume
--- Basically the chord is dissected into chords having the same level of volume, again using the function above.
-local function dissect_chord(depth,cache,...)
+--     Basically the chord is dissected into chords having the same level of volume, again using the function above.
+function dissect_chord(depth, cache, ...)
   local tmp = {...}
   local n = select('#', ...)
   if not ... or n == 0 then
@@ -315,7 +365,7 @@ local function dissect_chord(depth,cache,...)
   for _, a in ipairs(tmp) do
     if a.volume_percentage > 0 then table.insert(filtered   , a       )
                                     table.insert(volume_only, a.volume_percentage)
-                                    tmp_trace = tmp_trace.." "..tostring(a.note).."("..tostring(a.volume_percentage)..") "
+                                    tmp_trace = tmp_trace.." "..a.note.."("..a.volume_percentage..") "
     end
   end
   trace_log("There are "..#filtered.." notes left after filtering")

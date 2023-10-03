@@ -51,18 +51,23 @@ function add_volume_percentage(...)
     return t
 end
 
-local log_file = renoise.app().log_filename.."_interval.log"
-local file = io.open(log_file, "a")
-
+if renoise.app() then
+    interval_log_file_name = renoise.app().log_filename.."_interval.log"
+    interval_log_file = io.open(interval_log_file_name, "a")
+end
 
 function trace_log(something)
-    file:write(tostring("TRACE: "..something),"\n")
-    file:flush()
-    -- print(tostring("TRACE: "..something))
+    if interval_log_file then
+        interval_log_file:write(tostring("TRACE: "..something),"\n")
+        interval_log_file:flush()
+    end
+    print(tostring("TRACE: "..something))
 end
 
 function error_log(something)
-    file:write(tostring("ERROR: "..something),"\n")
-    file:flush()
-    -- print(tostring("ERROR: "..something))
+    if interval_log_file then
+        interval_log_file:write(tostring("ERROR: "..something),"\n")
+        interval_log_file:flush()
+    end
+    print(tostring("ERROR: "..something))
 end
