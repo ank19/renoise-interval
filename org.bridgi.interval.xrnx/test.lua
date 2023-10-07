@@ -18,6 +18,8 @@ local CONSONANCE_PERFECT_OCTAVE =  1.41
 local CONSONANCE_TWO_OCTAVES    =  2.00
 local CONSONANCE_MAJOR_TRIAD    =  3.91
 
+local CONSONANCE_PYTHAGOREAN_WOLF_FIFTH = 18.17
+
 local PYTHAGOREAN_D4  =  586.67
 local PYTHAGOREAN_Eb4 =  618.05
 local PYTHAGOREAN_E4  =  660.00
@@ -31,8 +33,6 @@ local PYTHAGOREAN_B4  =  990.00
 local PYTHAGOREAN_C5  = 1042.96
 local PYTHAGOREAN_Db5 = 1113.75
 local PYTHAGOREAN_D5  = 1173.33
-
-local CONSONANCE_PYTHAGOREAN_WOLF_FIFTH = 18.17
 
 local EQUAL_TEMPERAMENT_D4  =  587.33
 local EQUAL_TEMPERAMENT_Eb4 =  622.25
@@ -48,17 +48,11 @@ local EQUAL_TEMPERAMENT_C5  = 1046.50
 local EQUAL_TEMPERAMENT_Db5 = 1108.73
 local EQUAL_TEMPERAMENT_D5  = 1174.66
 
-local EPSILON = 0.01
-
 local HEARING_THRESHOLD = 0.011
 
 --  _  _ ____ _    ___  ____ ____    ____ _  _ _  _ ____ ___ _ ____ _  _ ____
 --  |__| |___ |    |__] |___ |__/    |___ |  | |\ | |     |  | |  | |\ | [__
 --  |  | |___ |___ |    |___ |  \    |    |__| | \| |___  |  | |__| | \| ___]
-
-local function is_almost(a, b)
-    return math.abs(a - b) < EPSILON
-end
 
 local function assert_interval_dissonance(expected, note1, note2, volume1, volume2, message)
     local single_line = message:gsub("\n"," ")
@@ -95,6 +89,13 @@ local function assert_equal_temperament(expected_hz, note, message)
     assert(is_almost(actual_hz, expected_hz), "Equal temperament "..message..": Expected "..expected_hz.."Hz, but got "..actual_hz.."Hz")
     trace_log("Successfully verified equal temperament frequency "..expected_hz.." for "..message)
 end
+
+local function assert_schildkraut(a, b, n, expected)
+    local actual = schildkraut(a - 1, b - 1, n) + 1 -- Note: Fixing Lua one-based index
+    assert(actual == expected, "Schildkraut value for "..a..","..b.." for N="..n..": Expected "..expected.." but got "..actual)
+    trace_log("Successfully verified Schildkraut value for "..a..","..b.." for N="..n)
+end
+
 
 --  ____ ____ _  _ ____ _ ____ ____    _  _ ____ ____ _  _ ____
 --  |__/ |___ |\ | |  | | [__  |___    |\/| |  | |    |_/  [__
@@ -290,6 +291,20 @@ local function test_equal_temperament()
     assert_equal_temperament(EQUAL_TEMPERAMENT_D5 , 74, "D5")
 end
 
+local function test_schildkraut()
+    assert_schildkraut(1, 2, 5,  1)
+    assert_schildkraut(1, 3, 5,  2)
+    assert_schildkraut(1, 4, 5,  3)
+    assert_schildkraut(1, 5, 5,  4)
+    assert_schildkraut(2, 3, 5,  5)
+    assert_schildkraut(2, 4, 5,  6)
+    assert_schildkraut(2, 5, 5,  7)
+    assert_schildkraut(3, 4, 5,  8)
+    assert_schildkraut(3, 5, 5,  9)
+    assert_schildkraut(4, 5, 5, 10)
+end
+
+test_schildkraut()
 test_equal_temperament()
 test_pythagorean_frequencies()
 test_pythagorean_wolf_fifth()
