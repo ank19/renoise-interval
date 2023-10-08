@@ -92,22 +92,26 @@ if renoise.app() then
     interval_log_file = io.open(interval_log_file_name, "a")
 end
 
-function trace_log(something)
+local function log(level, something)
     if interval_log_file then
-        interval_log_file:write(tostring("TRACE: "..something),"\n")
+        interval_log_file:write(tostring(level.." "..something),"\n")
         interval_log_file:flush()
     else
-        print(tostring("TRACE: "..something))
+        print(tostring(level.."  "..something))
     end
 end
 
+
+function trace_log(something)
+    log("TRACE", something)
+end
+
 function error_log(something)
-    if interval_log_file then
-        interval_log_file:write(tostring("ERROR: "..something),"\n")
-        interval_log_file:flush()
-    else
-        print(tostring("ERROR: "..something))
-    end
+    log("ERROR", something)
+end
+
+function test_log(something)
+    log("TEST ", something)
 end
 
 function vararg_tostring(separator, ...)
