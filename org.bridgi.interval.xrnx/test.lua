@@ -18,6 +18,8 @@ local CONSONANCE_PERFECT_OCTAVE =  1.41
 local CONSONANCE_TWO_OCTAVES    =  2.00
 local CONSONANCE_MAJOR_TRIAD    =  3.91
 
+local CONSONANCE_PYTHAGOREAN_WOLF_FIFTH = 18.17
+
 local PYTHAGOREAN_D4  =  586.67
 local PYTHAGOREAN_Eb4 =  618.05
 local PYTHAGOREAN_E4  =  660.00
@@ -31,8 +33,6 @@ local PYTHAGOREAN_B4  =  990.00
 local PYTHAGOREAN_C5  = 1042.96
 local PYTHAGOREAN_Db5 = 1113.75
 local PYTHAGOREAN_D5  = 1173.33
-
-local CONSONANCE_PYTHAGOREAN_WOLF_FIFTH = 18.17
 
 local EQUAL_TEMPERAMENT_D4  =  587.33
 local EQUAL_TEMPERAMENT_Eb4 =  622.25
@@ -48,31 +48,25 @@ local EQUAL_TEMPERAMENT_C5  = 1046.50
 local EQUAL_TEMPERAMENT_Db5 = 1108.73
 local EQUAL_TEMPERAMENT_D5  = 1174.66
 
-local EPSILON = 0.01
-
 local HEARING_THRESHOLD = 0.011
 
 --  _  _ ____ _    ___  ____ ____    ____ _  _ _  _ ____ ___ _ ____ _  _ ____
 --  |__| |___ |    |__] |___ |__/    |___ |  | |\ | |     |  | |  | |\ | [__
 --  |  | |___ |___ |    |___ |  \    |    |__| | \| |___  |  | |__| | \| ___]
 
-local function is_almost(a, b)
-    return math.abs(a - b) < EPSILON
-end
-
 local function assert_interval_dissonance(expected, note1, note2, volume1, volume2, message)
     local single_line = message:gsub("\n"," ")
     local _, wrapper = interval_properties(note1, note2, volume1, volume2)
     local interval, halftones, _, _, a, b, cents, p, frequency1, frequency2, actual = wrapper(nil)
     assert(is_almost(expected, actual), single_line.." - dissonance of "..actual.." doesn't match expected dissonance of "..expected)
-    trace_log("Successfully verified dissonance for '"..single_line.."': "..actual)
+    test_log("Verified dissonance for '"..single_line.."': "..actual)
 end
 
 local function assert_chord_dissonance(expected, chord, message)
     local single_line = message:gsub("\n"," ")
-    local actual = dissect_chord(1, nil, unpack(chord))
+    local actual = dissect_chord(1, nil, nil, unpack(chord))
     assert(is_almost(expected, actual), single_line.." - dissonance of "..actual.." doesn't match expected dissonance of "..expected)
-    trace_log("Successfully verified chord dissonance for '"..single_line.."': "..actual)
+    test_log("Verified chord dissonance for '"..single_line.."': "..actual)
 end
 
 local function assert_approximation(expected_a, expected_b, irrational, limit, message)
@@ -81,20 +75,27 @@ local function assert_approximation(expected_a, expected_b, irrational, limit, m
     assert(actual_a == expected_a and actual_b == expected_b,
             "Approximation for '"..single_line.."' yielded ratio "..actual_a.."/"..actual_b
                     ..", but expected "..expected_a.."/"..expected_b)
-    trace_log("Successfully verified approximation for for '"..single_line.."': "..expected_a.."/"..expected_b)
+    test_log("Verified approximation for for '"..single_line.."': "..expected_a.."/"..expected_b)
 end
 
 local function assert_pythagorean(expected_hz, frequencies, note, message)
     local actual_hz = pythagorean_frequency(frequencies, note)
     assert(is_almost(actual_hz, expected_hz), "Pythagorean "..message..": Expected "..expected_hz.."Hz, but got "..actual_hz.."Hz")
-    trace_log("Successfully verified Pythagorean frequency "..expected_hz.." for "..message)
+    test_log("Verified Pythagorean frequency "..expected_hz.." for "..message)
 end
 
 local function assert_equal_temperament(expected_hz, note, message)
     local actual_hz = equal_frequency(note)
     assert(is_almost(actual_hz, expected_hz), "Equal temperament "..message..": Expected "..expected_hz.."Hz, but got "..actual_hz.."Hz")
-    trace_log("Successfully verified equal temperament frequency "..expected_hz.." for "..message)
+    test_log("Verified equal temperament frequency "..expected_hz.." for "..message)
 end
+
+local function assert_schildkraut(a, b, n, expected)
+    local actual = schildkraut(a - 1, b - 1, n) + 1 -- Note: Fixing Lua one-based index
+    assert(actual == expected, "Schildkraut value for "..a..","..b.." for N="..n..": Expected "..expected.." but got "..actual)
+    test_log("Verified Schildkraut value for "..a..","..b.." for N="..n)
+end
+
 
 --  ____ ____ _  _ ____ _ ____ ____    _  _ ____ ____ _  _ ____
 --  |__/ |___ |\ | |  | | [__  |___    |\/| |  | |    |_/  [__
@@ -172,7 +173,8 @@ local function test_pure_intervals()
     local MAJOR_TRIAD = {{ note = 52, volume = 50, volume_percentage = 0.333, delta = 0 },
                          { note = 56, volume = 50, volume_percentage = 0.333, delta = 0 },
                          { note = 59, volume = 50, volume_percentage = 0.333, delta = 0 }}
-    -- (5*4)^0.5 * (6*5)^0.5 * (3*2)^0.5 = 3.91
+    -- ((5*4)^0.5 * (6*5)^0.5 * (3*2)^0.5)^0.333 = 3.91
+    test_log("Start testing major triad chord dissonance calculation")
     assert_chord_dissonance(CONSONANCE_MAJOR_TRIAD, MAJOR_TRIAD, "Major triad")
 
     -- C  C#  D  D#  E  F  F#  G  G#  A  A#  B
@@ -182,7 +184,7 @@ local function test_pure_intervals()
                                              { note = 59, volume = 0, volume_percentage = 0.1, delta = 0 },
                                              { note = 62, volume = 0, volume_percentage = 0.6, delta = 0 }}
     -- Every of the four notes is part of three pairs (of 6 pairs in total), therefore the volume has to be:
-    --     0.1 / (n - 1) = 1 / 30
+    --     0.1 / (4 - 1) = 1 / 30
     -- The expected dissonance value for the dissected chord having the volume 0.1 then is
     --     ( ( 6^(1/30) *  5^(1/30))
     --     * ( 6^(1/30) *  5^(1/30))
@@ -199,15 +201,17 @@ local function test_pure_intervals()
     -- Finally there's the prime for the last 40% of the volume for the last note:
     --     (1^0.2 * 1^0.2) = 1.0000
     -- That yields a dissonance value of 2.0959 * 1.4633 * 1.000 = 3.0669
-    -- However, the code uses the actual frequency ratio instead of a combination of pure intervals, the ratio 9/5 for
-    -- the seventh in the dominant seventh chord will be 16/9 (1.78) instead of 9/5 (1.80), resulting in a actual
+    -- When using the actual frequency ratio instead of a combination of pure intervals, the ratio 9/5 for the
+    -- seventh in the dominant seventh chord will be 16/9 (1.78) instead of 9/5 (1.80), resulting in a actual
     -- dissonance value of 3.44, as
     --     (16^0.1 * 9^0.1) = 1.6438
     -- The reasoning here is that prioritized use case is to use a specific tuning like equal temperament instead of
     -- the pure intervals.
 
-    assert_chord_dissonance(2.0959 * 1.6438 * 1.000, DOMINANT_SEVENTH_CHORD_VOL_DIFF, "Dominant Seventh Chord")
+    test_log("Start testing dominant seventh chord dissonance calculation")
+    assert_chord_dissonance(2.0959 * 1.4633 * 1.000, DOMINANT_SEVENTH_CHORD_VOL_DIFF, "Dominant Seventh Chord")
 
+    test_log("Start testing simple interval dissonance calculation")
     assert_interval_dissonance(CONSONANCE_PRIME         , 1,  1, 80, 80, interval_texts["en"][ 1])
     assert_interval_dissonance(CONSONANCE_MINOR_SECOND  , 1,  2, 80, 80, interval_texts["en"][ 2])
     assert_interval_dissonance(CONSONANCE_MAJOR_SECOND  , 1,  3, 80, 80, interval_texts["en"][ 3])
@@ -290,6 +294,20 @@ local function test_equal_temperament()
     assert_equal_temperament(EQUAL_TEMPERAMENT_D5 , 74, "D5")
 end
 
+local function test_schildkraut()
+    assert_schildkraut(1, 2, 5,  1)
+    assert_schildkraut(1, 3, 5,  2)
+    assert_schildkraut(1, 4, 5,  3)
+    assert_schildkraut(1, 5, 5,  4)
+    assert_schildkraut(2, 3, 5,  5)
+    assert_schildkraut(2, 4, 5,  6)
+    assert_schildkraut(2, 5, 5,  7)
+    assert_schildkraut(3, 4, 5,  8)
+    assert_schildkraut(3, 5, 5,  9)
+    assert_schildkraut(4, 5, 5, 10)
+end
+
+test_schildkraut()
 test_equal_temperament()
 test_pythagorean_frequencies()
 test_pythagorean_wolf_fifth()
