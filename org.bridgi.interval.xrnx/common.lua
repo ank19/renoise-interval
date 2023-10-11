@@ -11,6 +11,64 @@ function schildkraut(a, b, n)
     return (a * (2 * n - 1 - a)) / 2 + (b - a - 1)
 end
 
+-- Approximate fraction algorithm from
+--   Harmony Perception by Periodicity Detection
+--   Article in Journal of Mathematics and Music · March 2015
+--   DOI: 10.1080/17459737.2015.1033024
+--   Frieder Stolzenburg
+function approximate_rational(irrational, limit, hearing_threshold)
+    local m = limit and limit or math.huge
+    local x = irrational
+    local x1 = (1 - hearing_threshold) * x
+    local x2 = (1 + hearing_threshold) * x
+    local al = math.floor(x)
+    local bl = 1
+    local l = al / bl
+    if x1 <= l and l <= x2  then
+        return { al, bl }
+    end
+    local ar = al + 1
+    local br = 1
+    local r = ar / br
+    if x1 <= r and r <= x2  then
+        return { ar, br }
+    end
+    repeat
+        local am = al + ar
+        local bm = bl + br
+        if am > m or bm > m then
+            error_log("Cannot approximate rational for "..irrational
+                    .." with hearing threshold "..hearing_threshold
+                    .." and numerator/ denominator limit "..m)
+            return { 0, 0 }
+        end
+        local ambm = am / bm
+        if x1 <= ambm and ambm <= x2 then
+            trace_log("Approximated ".. irrational
+                    .." with threshold "..hearing_threshold.." to "..am.."/"..bm)
+            return { am, bm }
+        elseif x2 < ambm then
+            local k = math.floor((ar - x2 * br) / (x2 * bl - al))
+            am = ar + k * al
+            bm = br + k * bl
+            ar = am
+            br = bm
+        elseif ambm < x1 then
+            local k = math.floor((x1 * bl - al) / (ar - x1 * br))
+            am = al + k * ar
+            bm = bl + k * br
+            al = am
+            bl = bm
+        end
+    until false
+end
+
+-- Wrapper function for approximation of already known rational
+--    ... in order to take hearing threshold into consideration
+local function approximate_irrational(a, b, max, hearing_threshold)
+    return approximate_rational(a / b, max, hearing_threshold)
+end
+
 function round(n, digits)
     local f = 10 ^ (digits or 0)
     return math.floor(0.5 + n * f) / f
@@ -29,8 +87,14 @@ function least_common_multiple(a, b)
     return (a ~= 0 and b ~= 0) and a * b / greatest_common_divisor(a, b) or 0
 end
 
--- Used for testing purposes (comparing expected values and actual values)
+function reduce_fraction(a, b)
+    local gcd = greatest_common_divisor(a, b)
+    a = a / gcd
+    b = b / gcd
+    return a, b
+end
 
+-- Used for testing purposes (comparing expected values and actual values)
 local EPSILON = 0.01
 
 function is_almost(a, b)
@@ -43,7 +107,6 @@ end
 --
 
 -- Check if a note value represents an actual note or (contains an note 'OFF' indicator or is empty)
-
 local NOTE_OFF   = 120
 local NOTE_EMPTY = 121
 
@@ -62,9 +125,7 @@ function has_note(line, track)
 end
 
 -- Make sure that the volume is inside [0, 127]
-
 local VOLUME_MAX = 127
-
 function safe_volume(volume)
     return (not volume) and VOLUME_MAX or (volume > VOLUME_MAX and VOLUME_MAX or volume)
 end
@@ -100,7 +161,6 @@ local function log(level, something)
         print(tostring(level.."  "..something))
     end
 end
-
 
 function trace_log(something)
     log("TRACE", something)

@@ -11,88 +11,26 @@ renoise.tool():add_keybinding { name   = "Global:Tools:Interval Calculator",
 --  [__  |___  |   |  | |\ | | __ [__
 --  ___] |___  |   |  | | \| |__] ___]
 
-local settings = renoise.Document.create("IntervalCalculatorSettings") { view_type              =   1,
-                                                                         language               = "en",
-                                                                         max_delta              =  13,
-                                                                         max_lines              =   8,
-                                                                         dissonance_threshold_1 =   3.5,
-                                                                         dissonance_threshold_2 =   6.5,
-                                                                         dissonance_threshold_3 =  11.0,
-                                                                         hearing_threshold      =   0.004,
-                                                                         tuning                 =   1,
-                                                                         tuning_note            =   3,
-                                                                         pitch                  = 440,
-                                                                         volume_reduction       =   0.20,
-                                                                         chord_calculation      = true}
---  ____ ____ ___ _ ____ _  _ ____ _       ____ ___  ___  ____ ____ _  _ _ _  _ ____ ___ _ ____ _  _
---  |__/ |__|  |  | |  | |\ | |__| |       |__| |__] |__] |__/ |  |  \/  | |\/| |__|  |  | |  | |\ |
---  |  \ |  |  |  | |__| | \| |  | |___    |  | |    |    |  \ |__| _/\_ | |  | |  |  |  | |__| | \|
+local settings = renoise.Document.create("IntervalCalculatorSettings") {
+    view_type              =   1,
+    language               = "en",
+    max_delta              =  13,
+    max_lines              =   8,
+    dissonance_threshold_1 =   3.5,
+    dissonance_threshold_2 =   6.5,
+    dissonance_threshold_3 =  11.0,
+    hearing_threshold      =   0.004,
+    tuning                 =   1,
+    tuning_note            =   3,
+    pitch                  = 440,
+    volume_reduction       =   0.20,
+    chord_calculation      = true}
 
--- Approximate fraction algorithm from
---   Harmony Perception by Periodicity Detection
---   Article in Journal of Mathematics and Music · March 2015
---   DOI: 10.1080/17459737.2015.1033024
---   Frieder Stolzenburg
-function approximate_irrational(irrational, max)
-  local m = max and max or math.huge
-  local p = settings.hearing_threshold.value
-  local x = irrational
-  local x1 = (1 - p) * x
-  local x2 = (1 + p) * x
-  local al = math.floor(x)
-  local bl = 1
-  local l = al / bl
-  if x1 <= l and l <= x2  then
-    return { al, bl }
-  end
-  local ar = al + 1
-  local br = 1
-  local r = ar / br
-  if x1 <= r and r <= x2  then
-    return { ar, br }
-  end
-  repeat
-    local am = al + ar
-    local bm = bl + br
-    if am > m or bm > m then
-      error_log("Not able to approximate interval for ".. irrational
-              .." with hearing threshold "..tostring(p)
-              .." and numerator and denominator limit ".. m)
-      return { 0, 0 }
-    end
-    local ambm = am / bm
-    if x1 <= ambm and ambm <= x2 then
-      trace_log("Approximated ".. irrational.." with threshold "..p.." to "..am.."/"..bm)
-      return { am, bm }
-    elseif x2 < ambm then
-      local k = math.floor((ar - x2 * br) / (x2 * bl - al))
-      am = ar + k * al
-      bm = br + k * bl
-      ar = am
-      br = bm
-    elseif ambm < x1 then
-      local k = math.floor((x1 * bl - al) / (ar - x1 * br))
-      am = al + k * ar
-      bm = bl + k * br
-      al = am
-      bl = bm
-    end
-  until false
-end
-
--- Wrapper function for approximation of already known rational
---    ... in order to take hearing threshold into consideration
-local function approximate_rational(a, b, max)
-  return approximate_irrational(a / b, max)
-end
-
--- In case the approximation fails; simply use frequency ration to it's shortest terms
-local function fallback_frequency(frequency1, frequency2)
-  local a = round(math.max(frequency1, frequency2),  0)
-  local b = round(math.min(frequency1, frequency2),  0)
-  local gcd = greatest_common_divisor(a, b)
-  a = a / gcd
-  b = b / gcd
+-- In case the rational approximation fails, use frequency ratio to it's shortest terms
+local function fallback_ratio(frequency1, frequency2)
+  local a = round(math.max(frequency1, frequency2), 0)
+  local b = round(math.min(frequency1, frequency2), 0)
+  a, b = reduce_fraction(a, b)
   return a, b
 end
 
@@ -176,10 +114,10 @@ function pythagorean_interval(note1, note2, interval, octaves, volume, cache)
   local p = math.max(frequency1, frequency2) / math.min(frequency1, frequency2)
   local cents = ((note2 - note1) % 12 == 0) and (1200 * octaves)  -- Avoid rounding issues for whole octaves
                 or (1200 * math.log(p) / math.log(2))
-  local a, b = unpack(approximate_irrational(p))
+  local a, b = unpack(approximate_rational(p, math.huge, settings.hearing_threshold.value))
   if not a or not b then
     trace_log("Cannot approximate irrational "..p.."; using frequency ratio to it's shortest terms")
-    a, b = fallback_frequency(frequency1, frequency2)
+    a, b = fallback_ratio(frequency1, frequency2)
   end
   return a, b, cents, p, frequency1, frequency2, dissonance_value(octaves, volume, 2, Ratios.single(a, b))
 end
@@ -204,10 +142,10 @@ local function equal_interval(note1, note2, interval, octaves, volume, cache)
   local frequency2 = round(equal_frequency(note2),2)
   local p          = math.max(frequency1, frequency2) / math.min(frequency1, frequency2)
   local cents      = math.abs(note2 - note1) * 100
-  local a, b       = unpack(approximate_irrational(p))
+  local a, b       = unpack(approximate_rational(p, math.huge, settings.hearing_threshold.value))
   if not a or not b then
     trace_log("Cannot approximate irrational for interval no. "..(interval + 1)..": "..p.."; using frequency ratio to it's shortest terms")
-    a, b = fallback_frequency(frequency1, frequency2)
+    a, b = fallback_ratio(frequency1, frequency2)
   end
   return a, b, cents, p, frequency1, frequency2, dissonance_value(octaves, volume, 2, Ratios.single(a, b))
 end
@@ -294,18 +232,14 @@ local function chord_ratios_pure(frequency_cache, ...)
     for i = 1, N - 1 do
         for j = i + 1, N do
             -- Calculate ratio between note at index i and note at index j by multiplying out the ratios in between
-            local ratio = { 1, 1 }
+            local a, b = 1, 1
             for k = i + 1, j do
                 local _, wrapper = interval_properties(select(k, ...).note, select(k - 1, ...).note)
-                local _, _, _, _, a, b, _, _, _, _, _ = wrapper(frequency_cache)
-                ratio[1] = ratio[1] * a
-                ratio[2] = ratio[2] * b
+                local _, _, _, _, x, y, _, _, _, _, _ = wrapper(frequency_cache)
+                a, b = a * x, b * y
             end
-            -- Shorten fractions to it's lowest terms
-            local gcd = greatest_common_divisor(ratio[1], ratio[2])
-            ratio[1] = ratio[1] / gcd
-            ratio[2] = ratio[2] / gcd
-            ratios[schildkraut(i - 1, j - 1, N) + 1] = ratio
+            a, b = reduce_fraction(a, b)
+            ratios[schildkraut(i - 1, j - 1, N) + 1] = { a, b }
         end
     end
     trace_log("Chord ratios (pure) for N="..N.." notes: "..Ratios.tostring(ratios, nil, "  "))
