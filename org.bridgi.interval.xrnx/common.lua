@@ -25,13 +25,13 @@ function approximate_rational(irrational, limit, hearing_threshold)
     local bl = 1
     local l = al / bl
     if x1 <= l and l <= x2  then
-        return { al, bl }
+        return al, bl
     end
     local ar = al + 1
     local br = 1
     local r = ar / br
     if x1 <= r and r <= x2  then
-        return { ar, br }
+        return ar, br
     end
     repeat
         local am = al + ar
@@ -40,13 +40,13 @@ function approximate_rational(irrational, limit, hearing_threshold)
             error_log("Cannot approximate rational for "..irrational
                     .." with hearing threshold "..hearing_threshold
                     .." and numerator/ denominator limit "..m)
-            return { 0, 0 }
+            return nil, nil
         end
         local ambm = am / bm
         if x1 <= ambm and ambm <= x2 then
             trace_log("Approximated ".. irrational
                     .." with threshold "..hearing_threshold.." to "..am.."/"..bm)
-            return { am, bm }
+            return am, bm
         elseif x2 < ambm then
             local k = math.floor((ar - x2 * br) / (x2 * bl - al))
             am = ar + k * al

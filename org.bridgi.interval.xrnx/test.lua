@@ -70,7 +70,7 @@ local function assert_chord_dissonance(expected, chord, message)
 end
 
 local function assert_approximation(expected_a, expected_b, irrational, limit, message)
-    local actual_a, actual_b = unpack(approximate_rational(irrational, limit, HEARING_THRESHOLD))
+    local actual_a, actual_b = approximate_rational(irrational, limit, HEARING_THRESHOLD)
     local single_line = message:gsub("\n"," ")
     assert(actual_a == expected_a and actual_b == expected_b,
             "Approximation for '"..single_line.."' yielded ratio "..actual_a.."/"..actual_b

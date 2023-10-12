@@ -114,11 +114,8 @@ function pythagorean_interval(note1, note2, interval, octaves, volume, cache)
   local p = math.max(frequency1, frequency2) / math.min(frequency1, frequency2)
   local cents = ((note2 - note1) % 12 == 0) and (1200 * octaves)  -- Avoid rounding issues for whole octaves
                 or (1200 * math.log(p) / math.log(2))
-  local a, b = unpack(approximate_rational(p, math.huge, settings.hearing_threshold.value))
-  if not a or not b then
-    trace_log("Cannot approximate irrational "..p.."; using frequency ratio to it's shortest terms")
-    a, b = fallback_ratio(frequency1, frequency2)
-  end
+  local a, b = approximate_rational(p, math.huge, settings.hearing_threshold.value)
+  if not a or not b then a, b = fallback_ratio(frequency1, frequency2) end
   return a, b, cents, p, frequency1, frequency2, dissonance_value(octaves, volume, 2, Ratios.single(a, b))
 end
 
@@ -142,11 +139,8 @@ local function equal_interval(note1, note2, interval, octaves, volume, cache)
   local frequency2 = round(equal_frequency(note2),2)
   local p          = math.max(frequency1, frequency2) / math.min(frequency1, frequency2)
   local cents      = math.abs(note2 - note1) * 100
-  local a, b       = unpack(approximate_rational(p, math.huge, settings.hearing_threshold.value))
-  if not a or not b then
-    trace_log("Cannot approximate irrational for interval no. "..(interval + 1)..": "..p.."; using frequency ratio to it's shortest terms")
-    a, b = fallback_ratio(frequency1, frequency2)
-  end
+  local a, b       = approximate_rational(p, math.huge, settings.hearing_threshold.value)
+  if not a or not b then a, b = fallback_ratio(frequency1, frequency2) end
   return a, b, cents, p, frequency1, frequency2, dissonance_value(octaves, volume, 2, Ratios.single(a, b))
 end
 
