@@ -26,14 +26,6 @@ local settings = renoise.Document.create("IntervalCalculatorSettings") {
     volume_reduction       =   0.20,
     chord_calculation      = true}
 
--- In case the rational approximation fails, use frequency ratio to it's shortest terms
-local function fallback_ratio(frequency1, frequency2)
-  local a = round(math.max(frequency1, frequency2), 0)
-  local b = round(math.min(frequency1, frequency2), 0)
-  a, b = reduce_fraction(a, b)
-  return a, b
-end
-
 -- Calculate dissonance value
 --     The calculation is (a1 * ... * an * b1 * ... * bn) ^ ( (1 / n ) * volume percentage distributed on dyads
 --     where N is the number of intervals and a/ b the frequency ratios to lowest terms
@@ -109,13 +101,15 @@ function pythagorean_interval(note1, note2, interval, octaves, volume, cache)
   trace_log("Calculating interval data from "..note1.." to "..note2.." in Pythagorean temperament");
   local frequencies = cache.frequencies and cache.frequencies or pythagorean_frequencies()
   cache.frequencies = frequencies
+  local f1, f2 = pythagorean_frequency(frequencies, note1), pythagorean_frequency(frequencies, note2)
+  f1, f2 =  math.max(f1, f2), math.min(f1, f2)
   local frequency1 = round(pythagorean_frequency(frequencies, note1), 2)
   local frequency2 = round(pythagorean_frequency(frequencies, note2), 2)
-  local p = math.max(frequency1, frequency2) / math.min(frequency1, frequency2)
+  local p = round(f1, 2) / round(f2, 2)
   local cents = ((note2 - note1) % 12 == 0) and (1200 * octaves)  -- Avoid rounding issues for whole octaves
                 or (1200 * math.log(p) / math.log(2))
   local a, b = approximate_rational(p, math.huge, settings.hearing_threshold.value)
-  if not a or not b then a, b = fallback_ratio(frequency1, frequency2) end
+  if not a or not b then a, b = reduce_fraction(round(f1, 0), round(f2, 0)) end
   return a, b, cents, p, frequency1, frequency2, dissonance_value(octaves, volume, 2, Ratios.single(a, b))
 end
 
@@ -135,12 +129,12 @@ end
 -- Calculate interval properties
 local function equal_interval(note1, note2, interval, octaves, volume, cache)
   trace_log("Calculating interval data from "..note1.." to "..note2.." in equal temperament");
-  local frequency1 = round(equal_frequency(note1),2)
-  local frequency2 = round(equal_frequency(note2),2)
-  local p          = math.max(frequency1, frequency2) / math.min(frequency1, frequency2)
-  local cents      = math.abs(note2 - note1) * 100
-  local a, b       = approximate_rational(p, math.huge, settings.hearing_threshold.value)
-  if not a or not b then a, b = fallback_ratio(frequency1, frequency2) end
+  local f1, f2 = equal_frequency(note1), equal_frequency(note2)
+  f1, f2 =  math.max(f1, f2), math.min(f1, f2)
+  local p = round(f1, 2) / round(f2, 2)
+  local cents = math.abs(note2 - note1) * 100
+  local a, b = approximate_rational(p, math.huge, settings.hearing_threshold.value)
+  if not a or not b then a, b = reduce_fraction(round(f1, 0), round(f2, 0)) end
   return a, b, cents, p, frequency1, frequency2, dissonance_value(octaves, volume, 2, Ratios.single(a, b))
 end
 
