@@ -1,6 +1,9 @@
 require 'interface'
 require 'language'
 require 'common'
+require 'maths'
+require 'logging'
+require 'metatables'
 
 renoise.tool():add_menu_entry { name   = "Main Menu:Tools:Bridgi:Interval Calculator",
                                 invoke = function() calculate_intervals() end }
@@ -164,11 +167,9 @@ function interval_properties(note1, note2, volume1, volume2)
   local octaves   = math.floor(math.abs(halftones) / 12)
   trace_log("Interval between "..note1.." and "..note2.." is spanning "..octaves.." octaves")
   local interval  = delta % 12
-  local t1, t2    = unpack(add_volume_percentage({ volume = volume1 }, { volume = volume2 }))
-  local volume    = math.min(t1.volume_percentage, t2.volume_percentage) -- The reasoning here is that the note having
-                                                                         -- the higher volume can be considered as prime
-                                                                         -- anyhow and therefore can be discarded as
-                                                                         -- the dissonance then resolves to one
+  local t1, t2    = volume_percentage(volume1, volume2)
+  local volume    = math.min(t1, t2) -- The reasoning here is that the note having the higher volume can be considered
+                                     -- as prime anyhow and therefore can be discarded as the dissonance resolves to one
   if note1 ~= note2 and interval == 0 then
     interval = 12
   end
@@ -239,7 +240,7 @@ end
 function dissect_chord(depth, ratio_cache, frequency_cache, ...)
     local N = select('#', ...)
     if not ... or N == 0 then return nil end
-    if not depth then depth = 1 end -- End condition of the recursion
+    if not depth then depth = 1 end
     if not ratio_cache then
         -- The calculation of the ratio depends on whether we know the frequencies
         -- or whether we have only the pure intervals between notes
@@ -257,7 +258,7 @@ function dissect_chord(depth, ratio_cache, frequency_cache, ...)
             volume = math.min(volume, e.volume_percentage)
         end
     end
-    if remaining <= 1 then
+    if remaining <= 1 then  -- End of recursion
         return 1 -- Return a dissonance value of one in case if less than two notes left - then we just have a prime
     end
     -- Get dyads in which both notes still have a volume level larger than zero
@@ -663,12 +664,22 @@ function whole_chord(data, complete)
         end
       end
     end
+
+    local add_volume_percentage = function(t)
+        local v = {}
+        for i, e in ipairs(t) do v[i] = e.volume end
+        v = { volume_percentage(unpack(v)) }
+        for i, e in ipairs(v) do t[i].volume_percentage = e end
+    end
+
     -- Do not consider lingering chords if we haven't got a full set of notes
     -- in order to avoid invalid values at the top of the interval matrix
-    if #chord_linger[row] < no_of_note_columns then chord_linger[row] = {}
-    else chord_linger[row] = add_volume_percentage(unpack(chord_linger[row]))
+    if #chord_linger[row] < no_of_note_columns then
+        chord_linger[row] = {}
+    else
+        add_volume_percentage(chord_linger[row])
     end
-    chord_actual[row] = add_volume_percentage(unpack(chord_actual[row]))
+    add_volume_percentage(chord_actual[row])
     if not interval_data[row] then
       interval_data[row] = {}
     end
