@@ -60,8 +60,23 @@ end
 
 -- Wrapper function for approximation of already known rational
 --    ... in order to take hearing threshold into consideration
-local function approximate_irrational(a, b, max, hearing_threshold)
+function approximate_irrational(a, b, max, hearing_threshold)
     return approximate_rational(a / b, max, hearing_threshold)
+end
+
+-- Calculate dissonance value
+--     The calculation is (a1 * ... * an * b1 * ... * bn) ^ ( (1 / n ) * volume percentage distributed on dyads
+--     where N is the number of intervals and a/ b the frequency ratios to lowest terms
+function dissonance_value(octaves, volume, N, fractions)
+    local x = 1
+    for _, fraction in ipairs(fractions) do x = x * fraction[1] * fraction[2] end
+    octaves = octaves or 0
+    volume = volume or 0
+    N = N or 2 -- default is dyad
+    local mod = math.max(0, math.abs(octaves) - 1)
+    local d = math.sqrt(2) ^ mod * (x ^ (volume / (N - 1)))
+    trace_log("Dissonance: sqrt(2)^"..mod.."*("..Ratios.tostring(fractions, "*")..")^("..volume.."/("..N.."-1))=".. d);
+    return d
 end
 
 function round(n, digits)

@@ -214,11 +214,15 @@ local function dissonance_details(dissonance, settings)
     return nil
 end
 
+local function display_interval(delta, interval)
+    return (delta >= 13 and delta <= 24) and delta or interval -- Additional intervals Ninth...Fifteenth
+end
+
 local function update_interval(vb, data, settings, cache)
-    local language      = settings.language.value
-    local view          = settings.view_type.value
-    local interval_data = data.interval_data
-    local value         = data.value
+    local language = settings.language.value
+    local view     = settings.view_type.value
+    local intervalx = data.interval
+    local value    = data.value
     for col = 2, data.no_of_note_columns * 2 + 2 do
         for row = 1, #value do
             local interval_text    = ""
@@ -229,28 +233,40 @@ local function update_interval(vb, data, settings, cache)
             local dissonance_color = COLOR_DISSONANCE_X
             local view_id          = ID_ELEMENT..row.."."..col
             local is_chord_column  = col > data.no_of_note_columns * 2
-            local interval, octave, halftones, display_interval, a, b, p, f1, f2, cents, dissonance
+
+            --local octave, halftones, a, b, p, f1, f2, cents, dissonance
+            local interval, properties, dissonance, octaves, halftones, cents, a, b, interval_no
+
             if not is_chord_column then
-                local wrapper = interval_data[row][col]
-                if wrapper then
-                    interval, halftones, octave, display_interval, a, b, cents, p, f1, f2, dissonance = wrapper(cache)
+                interval = intervalx[row][col]
+                if interval then
+                    properties = interval:properties()
+                    dissonance = properties.dissonance
+                    cents = properties.cents
+                    octaves = interval.octaves
+                    halftones = interval.halftones
+                    a, b = interval:ab()
+                    interval_no = interval.interval
                 end
             else
-                local wrapper = interval_data[row][col]
+                local wrapper = intervalx[row][col]
                 if wrapper then
                     dissonance = wrapper(cache)
                 end
+
             end
+
             dissonance_text, dissonance_color = dissonance_details(dissonance, settings)
+
             if interval then
-                octave_text = tostring(octave).." "..octave_texts[language]
-                local has_dedicated_text = octave == 0 or (octave == 1 and interval == 12)
-                if     octave <  0        then octave_text = ""..octave_text
+                octave_text = tostring(octaves).." "..octave_texts[language]
+                local has_dedicated_text = octaves == 0 or (octaves == 1 and interval_no == 12)
+                if     octaves <  0        then octave_text = ""..octave_text
                 elseif has_dedicated_text then octave_text = ""
-                                               effect_text = effect_texts[language][interval + 1]
+                                               effect_text = effect_texts[language][interval_no + 1]
                 else                           octave_text = "+"..octave_text
                 end
-                interval_text = interval_texts[language][display_interval + 1]
+                interval_text = interval_texts[language][display_interval(math.abs(halftones), interval_no) + 1]
                                 .."\n("
                                 ..tostring(halftones)
                                 .." HT   "

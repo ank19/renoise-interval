@@ -39,3 +39,31 @@ function volume_percentage(...)
     return unpack(t)
 end
 
+-- Cache key for complex table keys
+function cache_key(...)
+    local sep = "-#-"
+    local s = ""
+    local n = select('#', ...)
+    for i = 1, n do
+        s = s..tostring(select(i, ...))..sep
+    end
+    return s
+end
+
+--- Dump object
+function dump(o)
+    if type(o) == 'table' then
+        local s = '{ '
+        for k,v in pairs(o) do
+            if type(k) ~= 'number' then k = '"'..k..'"' end
+            s = s .. '['..k..'] = ' .. dump(v) .. ','
+        end
+        return s .. '} '
+    elseif type(o) == 'nil' then
+        return "(NIL)"
+    elseif type(o) == 'string' then
+        return "(function)"
+    else
+        return tostring(o)
+    end
+end

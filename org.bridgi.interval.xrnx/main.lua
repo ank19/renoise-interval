@@ -4,189 +4,26 @@ require 'common'
 require 'maths'
 require 'logging'
 require 'metatables'
+require 'settings'
+require 'tunings'
 
 renoise.tool():add_menu_entry { name   = "Main Menu:Tools:Bridgi:Interval Calculator",
                                 invoke = function() calculate_intervals() end }
 
 renoise.tool():add_keybinding { name   = "Global:Tools:Interval Calculator",
                                 invoke = function() calculate_intervals() end }
---  ____ ____ ___ ___ _ _  _ ____ ____
---  [__  |___  |   |  | |\ | | __ [__
---  ___] |___  |   |  | | \| |__] ___]
-
-local settings = renoise.Document.create("IntervalCalculatorSettings") {
-    view_type              =   1,
-    language               = "en",
-    max_delta              =  13,
-    max_lines              =   8,
-    dissonance_threshold_1 =   3.5,
-    dissonance_threshold_2 =   6.5,
-    dissonance_threshold_3 =  11.0,
-    hearing_threshold      =   0.004,
-    tuning                 =   1,
-    tuning_note            =   3,
-    pitch                  = 440,
-    volume_reduction       =   0.20,
-    chord_calculation      = true}
-
--- Calculate dissonance value
---     The calculation is (a1 * ... * an * b1 * ... * bn) ^ ( (1 / n ) * volume percentage distributed on dyads
---     where N is the number of intervals and a/ b the frequency ratios to lowest terms
-local function dissonance_value(octaves, volume, N, fractions)
-  local x = 1
-  for _, fraction in ipairs(fractions) do x = x * fraction[1] * fraction[2] end
-  octaves = octaves or 0
-  volume = volume or 0
-  N = N or 2 -- default is dyad
-  local octave_mod = math.max(0, math.abs(octaves) - 1)
-  local dissonance = math.sqrt(2) ^ octave_mod * (x ^ (volume / (N - 1)))
-  trace_log("Dissonance: sqrt(2) ^ "..octave_mod.."  *  ("..Ratios.tostring(fractions, "*", nil)..") ^ ("..volume.."/("..N.."-1))="..dissonance);
-  return dissonance
-end
-
---  ___  _   _ ___ _  _ ____ ____ ____ ____ ____ ____ _  _
---  |__]  \_/   |  |__| |__| | __ |  | |__/ |___ |__| |\ |
---  |      |    |  |  | |  | |__] |__| |  \ |___ |  | | \|
-
--- Create frequency table for Pythagorean tuning on reference octave
--- Takes tuning note and pitch into account
--- Algorithm as outlined on https://en.wikipedia.org/wiki/Pythagorean_tuning
-function pythagorean_frequencies()
-  local cycle_of_fifths = CYCLE_OF_FIFTHS[settings.tuning_note.value]
-  -- Get index of a' (in renoise A4 = 57 = 4 * 12 + 9)
-  local pitch_note_i
-  for i, n in ipairs(cycle_of_fifths) do
-    if n == 9 then -- Kammerton a' == 9
-      pitch_note_i = i
-    end
-  end
-  local fifths = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
-  fifths[pitch_note_i] = settings.pitch.value
-  if pitch_note_i >  1 then for i = pitch_note_i - 1,  1, -1 do fifths[i] = fifths[i + 1] * (2 / 3) end end
-  if pitch_note_i < 12 then for i = pitch_note_i + 1, 12,  1 do fifths[i] = fifths[i - 1] * (3 / 2) end end
-  local log = ""
-  for _, v in ipairs(fifths) do log = log .. v .. " " end
-  trace_log("Frequencies (unadjusted, circle): "..log)
-  local frequencies = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
-  for i, n in ipairs(cycle_of_fifths) do
-    frequencies[n + 1] = fifths[i]
-  end
-  log = ""
-  for _, v in ipairs(frequencies) do log = log .. v .. " " end
-  trace_log("Frequencies (unadjusted, increasing): "..log)
-  trace_log("Adjusting frequencies left of a'")
-  for j = 9, 1, -1 do
-    while frequencies[j + 1] / frequencies[j] > 2.0 do frequencies[j] = frequencies[j] * 2 end
-    while frequencies[j + 1] / frequencies[j] < 1.0 do frequencies[j] = frequencies[j] / 2 end
-  end
-  trace_log("Adjusting frequencies right of a'")
-  for j = 11, 12, 1 do
-    while frequencies[j] / frequencies[j - 1] < 1.0 do frequencies[j] = frequencies[j] * 2 end
-    while frequencies[j] / frequencies[j - 1] > 2.0 do frequencies[j] = frequencies[j] / 2 end
-  end
-  log = ""
-  for _, v in ipairs(frequencies) do log = log .. v .. " " end
-  trace_log("Frequencies (adjusted): "..log)
-  return frequencies
-end
-
--- Use the frequency set for the reference octave to calculate a specific note frequency
-function pythagorean_frequency(frequencies, note)
-  local octave_mod = math.floor(math.abs(note) / 12) - 4
-  local base = frequencies[note % 12 + 1]
-  local frequency = base * (octave_mod >= 4 and 2 ^ (octave_mod - 4) or (1 / (2 ^ (0 - octave_mod))))
-  trace_log("Calculated frequency "..frequency.."Hz for note "..note.." in Pythagorean with "..settings.pitch.value.."Hz pitch, octave modifier was "..octave_mod)
-  return frequency
-end
-
--- Calculate interval properties
-function pythagorean_interval(note1, note2, interval, octaves, volume, cache)
-  trace_log("Calculating interval data from "..note1.." to "..note2.." in Pythagorean temperament");
-  local frequencies = cache.frequencies and cache.frequencies or pythagorean_frequencies()
-  cache.frequencies = frequencies
-  local f1, f2 = pythagorean_frequency(frequencies, note1), pythagorean_frequency(frequencies, note2)
-  f1, f2 =  math.max(f1, f2), math.min(f1, f2)
-  local frequency1 = round(pythagorean_frequency(frequencies, note1), 2)
-  local frequency2 = round(pythagorean_frequency(frequencies, note2), 2)
-  local p = round(f1, 2) / round(f2, 2)
-  local cents = ((note2 - note1) % 12 == 0) and (1200 * octaves)  -- Avoid rounding issues for whole octaves
-                or (1200 * math.log(p) / math.log(2))
-  local a, b = approximate_rational(p, math.huge, settings.hearing_threshold.value)
-  if not a or not b then a, b = reduce_fraction(round(f1, 0), round(f2, 0)) end
-  return a, b, cents, p, frequency1, frequency2, dissonance_value(octaves, volume, 2, Ratios.single(a, b))
-end
-
---  ____ ____ _  _ ____ _       ___ ____ _  _ ___  ____ ____ ____ _  _ ____ _  _ ___
---  |___ |  | |  | |__| |        |  |___ |\/| |__] |___ |__/ |__| |\/| |___ |\ |  |
---  |___ |_\| |__| |  | |___     |  |___ |  | |    |___ |  \ |  | |  | |___ | \|  |
-
--- Calculate a specific note frequency based on the pitch setting
-function equal_frequency(note)
-  -- Pitch node in renoise shifted by +8 (instead of 49)
-  -- https://en.wikipedia.org/wiki/12_equal_temperament
-  local frequency = settings.pitch.value * ((2 ^ (1 / 12)) ^ (note - 57))
-  trace_log("Calculated frequency "..frequency.."Hz for note "..note.." in equal temperament with "..settings.pitch.value.."Hz pitch")
-  return frequency
-end
-
--- Calculate interval properties
-local function equal_interval(note1, note2, interval, octaves, volume, cache)
-  trace_log("Calculating interval data from "..note1.." to "..note2.." in equal temperament");
-  local f1, f2 = equal_frequency(note1), equal_frequency(note2)
-  f1, f2 =  math.max(f1, f2), math.min(f1, f2)
-  local p = round(f1, 2) / round(f2, 2)
-  local cents = math.abs(note2 - note1) * 100
-  local a, b = approximate_rational(p, math.huge, settings.hearing_threshold.value)
-  if not a or not b then a, b = reduce_fraction(round(f1, 0), round(f2, 0)) end
-  return a, b, cents, p, frequency1, frequency2, dissonance_value(octaves, volume, 2, Ratios.single(a, b))
-end
-
---  ___  _  _ ____ ____    _ _  _ ___ ____ ____ _  _ ____ _    ____
---  |__] |  | |__/ |___    | |\ |  |  |___ |__/ |  | |__| |    [__
---  |    |__| |  \ |___    | | \|  |  |___ |  \  \/  |  | |___ ___]
-
--- Calculate interval properties
-local function pure_interval(note1, note2, interval, octaves, volume, cache)
-  trace_log("Calculating interval data from "..note1.." to "..note2.." in pure intervals");
-  local a, b       = unpack(PURE_INTERVALS[interval + 1])
-  local cents      = 1200 * (octaves + math.log(a / b) / math.log(2))
-  trace_log("Using constant interval ratio "..a.."/"..b.." (pure intervals)");
-  return a, b, cents, nil, nil, nil, dissonance_value(octaves, volume, 2, Ratios.single(a, b))
-end
 
 --  ____ ____ _  _ ____ ____ _ ____    _ _  _ ___ ____ ____ _  _ ____ _       ____ _  _ _  _ ____ ___ _ ____ _  _ ____
 --  | __ |___ |\ | |___ |__/ | |       | |\ |  |  |___ |__/ |  | |__| |       |___ |  | |\ | |     |  | |  | |\ | [__
 --  |__] |___ | \| |___ |  \ | |___    | | \|  |  |___ |  \  \/  |  | |___    |    |__| | \| |___  |  | |__| | \| ___]
 
--- Calculate basic interval properties
-function interval_properties(note1, note2, volume1, volume2)
-  volume1 = volume1 or 0
-  volume2 = volume2 or 0
-  local halftones = note2 - note1
-  local delta     = math.abs(halftones)
-  local octaves   = math.floor(math.abs(halftones) / 12)
-  trace_log("Interval between "..note1.." and "..note2.." is spanning "..octaves.." octaves")
-  local interval  = delta % 12
-  local t1, t2    = volume_percentage(volume1, volume2)
-  local volume    = math.min(t1, t2) -- The reasoning here is that the note having the higher volume can be considered
-                                     -- as prime anyhow and therefore can be discarded as the dissonance resolves to one
-  if note1 ~= note2 and interval == 0 then
-    interval = 12
-  end
-  local display_interval = interval
-  if delta >= 13 and delta <= 24 then -- Additional intervals Ninth...Fifteenth just for displaying
-    display_interval = delta
-  end
-  return interval, function(cache)
-    local f
-    if     settings.tuning.value == 3 then f = pythagorean_interval
-    elseif settings.tuning.value == 2 then f = equal_interval
-    elseif settings.tuning.value == 1 then f = pure_interval
-    end
-    local a, b, cents, p, frequency1, frequency2, dissonance = f(note1, note2, interval, octaves, volume, cache)
-    return interval, halftones, octaves * ((halftones < 0 and -1) or 1), display_interval,
-           a, b, cents, p, frequency1, frequency2, dissonance
-  end
+function new_interval(note1, note2, volume1, volume2)
+    return Interval:new {
+        note1 = note1,
+        note2 = note2,
+        volume1 = volume1,
+        volume2 = volume2
+    }
 end
 
 --  ____ _  _ ____ ____ ___     ___  _ ____ ____ ____ _  _ ____ _  _ ____ ____
@@ -194,17 +31,15 @@ end
 --  |___ |  | |__| |  \ |__/    |__/ | ___] ___] |__| | \| |  | | \| |___ |___
 
 -- Calculate ratios between all combinations of dyads
--- based on actual frequency ratios, not on combining the intervals
--- ( frequency cache is optional )
-local function chord_ratios_frequencies(frequency_cache, ...)
+-- based on actual frequency ratios, not by combining the intervals
+local function chord_ratios_frequencies(...)
     local N = select('#', ...)
     if not ... or N == 0 then return nil end
     local ratios = Ratios.new {}
     for i = 1, N - 1 do
         for j = i + 1, N do
-            local _, wrapper = interval_properties(select(i, ...).note, select(j, ...).note)
-            local _, _, _, _, a, b, _, _, _, _, _ = wrapper(frequency_cache)
-            ratios[schildkraut(i - 1, j - 1, N) + 1] = { a, b }
+            local interval = new_interval(select(i, ...).note, select(j, ...).note)
+            ratios[schildkraut(i - 1, j - 1, N) + 1] = interval:ratio()
         end
     end
     trace_log("Chord ratios (frequencies) for N="..N.." notes: "..Ratios.tostring(ratios, nil, "  "))
@@ -213,8 +48,7 @@ end
 
 -- Calculate ratios between all combinations of dyads
 -- based on combining the intervals, not actual frequency ratios, which are not available when thinking in pure intervals
--- ( frequency cache is optional )
-local function chord_ratios_pure(frequency_cache, ...)
+local function chord_ratios_pure(...)
     local N = select('#', ...)
     if not ... or N == 0 then return nil end
     local ratios = Ratios.new {}
@@ -223,9 +57,9 @@ local function chord_ratios_pure(frequency_cache, ...)
             -- Calculate ratio between note at index i and note at index j by multiplying out the ratios in between
             local a, b = 1, 1
             for k = i + 1, j do
-                local _, wrapper = interval_properties(select(k, ...).note, select(k - 1, ...).note)
-                local _, _, _, _, x, y, _, _, _, _, _ = wrapper(frequency_cache)
-                a, b = a * x, b * y
+                local interval = new_interval(select(k, ...).note, select(k - 1, ...).note)
+                local _a, _b = interval:ab()
+                a, b = a * _a, b * _b
             end
             a, b = reduce_fraction(a, b)
             ratios[schildkraut(i - 1, j - 1, N) + 1] = { a, b }
@@ -237,7 +71,7 @@ end
 
 -- Calculate dissonance for a chord with notes not necessarily having the same volume level
 -- Basically the chord is dissected into chords having the same volume level, again using the function above.
-function dissect_chord(depth, ratio_cache, frequency_cache, ...)
+function dissect_chord(depth, ratio_cache, ...)
     local N = select('#', ...)
     if not ... or N == 0 then return nil end
     if not depth then depth = 1 end
@@ -246,7 +80,7 @@ function dissect_chord(depth, ratio_cache, frequency_cache, ...)
         -- or whether we have only the pure intervals between notes
         local f
         if settings.tuning.value == 1 then f = chord_ratios_pure else f = chord_ratios_frequencies end
-        ratio_cache = f(frequency_cache, ...)
+        ratio_cache = f(...)
     end
     local remaining = 0
     local volume = math.huge
@@ -277,14 +111,14 @@ function dissect_chord(depth, ratio_cache, frequency_cache, ...)
         table.insert(rest, { note = e.note, delta = e.delta, volume_percentage = math.max(e.volume_percentage - volume, 0)})
     end
     -- Get dissonance for the dyads with minimum volume level and start-over again for the remaining volume level
-    return dissonance_value(nil, volume, remaining, partial) * dissect_chord(depth + 1, ratio_cache, frequency_cache, unpack(rest))
+    return dissonance_value(nil, volume, remaining, partial) * dissect_chord(depth + 1, ratio_cache, unpack(rest))
 end
 
 local function dissect_chord_wrapper(...)
-  local tmp = {...}
-  return function(frequency_cache)
-    return dissect_chord(1, nil, frequency_cache, unpack(tmp))
-  end
+    local tmp = {...}
+    return function()
+        return dissect_chord(1, nil, unpack(tmp))
+    end
 end
 
 --  ____ _ _  _ ___     _  _ ____ ___ ____ ____
@@ -564,68 +398,62 @@ end
 
 -- Calculate intervals between successive notes
 function vertical_intervals(data)
-  local interval           = data.interval
-  local interval_data      = data.interval_data
-  local value              = data.value
-  local volume             = data.volume
-  local gaps               = data.gaps
-  local no_of_note_columns = data.no_of_note_columns
-  for row = 1, #value - 1 do
-    interval     [row] = {}
-    interval_data[row] = {}
-    for col = 1, no_of_note_columns do
-      local note1 = value[row    ][col]
-      local note2 = value[row + 1][col]
-      if is_note(note1) and is_note(note2) and not gaps[row + 1][col] then
-        interval     [row][col * 2],
-        interval_data[row][col * 2] = interval_properties(note1, note2, volume[row][col], volume[row + 1][col])
-      elseif is_note(note2) and not is_note(note1) and row > 1 and not gaps[row +1][col] then
-        local note0
-        local volume0
-        for b = row - 1, 1, -1 do
-          note0 = (is_note(value[b][col]) and not gaps[b][col]) and value[b][col] or nil
-          volume0 = volume[b][col]
-          if note0 then break end
+    local interval           = data.interval
+    local value              = data.value
+    local volume             = data.volume
+    local gaps               = data.gaps
+    local no_of_note_columns = data.no_of_note_columns
+    for row = 1, #value - 1 do
+        interval[row] = {}
+        for col = 1, no_of_note_columns do
+            local note1 = value[row    ][col]
+            local note2 = value[row + 1][col]
+            if is_note(note1) and is_note(note2) and not gaps[row + 1][col] then
+                interval[row][col * 2] = new_interval(note1, note2, volume[row][col], volume[row + 1][col])
+            elseif is_note(note2) and not is_note(note1) and row > 1 and not gaps[row +1][col] then
+                local note0
+                local volume0
+                for b = row - 1, 1, -1 do
+                    note0 = (is_note(value[b][col]) and not gaps[b][col]) and value[b][col] or nil
+                    volume0 = volume[b][col]
+                    if note0 then break end
+                end
+                if is_note(note0) then
+                    interval[row][col * 2] = new_interval(note0, note2, volume0, volume[row + 1][col])
+                end
+            end
         end
-        if is_note(note0) then
-          interval     [row][col * 2],
-          interval_data[row][col * 2] = interval_properties(note0, note2, volume0, volume[row + 1][col])
-        end
-      end
     end
-  end
 end
 
 -- Calculate intervals between dyads of a chord
 function horizontal_intervals(data)
-  local interval           = data.interval
-  local interval_data      = data.interval_data
-  local value              = data.value
-  local volume             = data.volume
-  local no_of_note_columns = data.no_of_note_columns
-  for row = 1, #value do
-    if not interval     [row] then interval     [row] = {} end
-    if not interval_data[row] then interval_data[row] = {} end
-    for col = 1, no_of_note_columns - 1 do
-      local note1 = value[row][col]
-      local note2 = value[row][col + 1]
-      if is_note(note1) and is_note(note2) then
-        interval     [row][col * 2 + 1],
-        interval_data[row][col * 2 + 1] = interval_properties(note1, note2, volume[row][col], volume[row][col + 1])
-      elseif is_note(note2) and not is_note(note1) and col > 1 then
-        local note0, volume0
-        for b = col - 1, 1, -1 do
-          note0 = is_note(value[row][b]) and value[row][b] or nil
-          volume0 = volume[b][col]
-          if note0 then break end
+    local interval           = data.interval
+    local value              = data.value
+    local volume             = data.volume
+    local no_of_note_columns = data.no_of_note_columns
+    for row = 1, #value do
+        if not interval[row] then
+            interval[row] = {}
         end
-        if is_note(note0) then
-          interval     [row][col * 2 + 1],
-          interval_data[row][col * 2 + 1] = interval_properties(note0, note2, volume0, volume[row][col + 1])
+        for col = 1, no_of_note_columns - 1 do
+            local note1 = value[row][col]
+            local note2 = value[row][col + 1]
+            if is_note(note1) and is_note(note2) then
+                interval[row][col * 2 + 1] = new_interval(note1, note2, volume[row][col], volume[row][col + 1])
+            elseif is_note(note2) and not is_note(note1) and col > 1 then
+                local note0, volume0
+                for b = col - 1, 1, -1 do
+                    note0 = is_note(value[row][b]) and value[row][b] or nil
+                    volume0 = volume[b][col]
+                    if note0 then break end
+                end
+                if is_note(note0) then
+                    interval[row][col * 2 + 1] = new_interval(note0, note2, volume0, volume[row][col + 1])
+                end
+            end
         end
-      end
     end
-  end
 end
 
 -- This function considers the chord as a whole, in contrast to the functions above, which are only
@@ -633,7 +461,7 @@ end
 -- searches for reverberating notes, but only if no lines were omitted previously. Currently, the
 -- function does not consider "OFF" notes
 function whole_chord(data, complete)
-  local interval_data      = data.interval_data
+  local interval           = data.interval
   local value              = data.value
   local volume             = data.volume
   local steps              = data.steps
@@ -680,13 +508,13 @@ function whole_chord(data, complete)
         add_volume_percentage(chord_linger[row])
     end
     add_volume_percentage(chord_actual[row])
-    if not interval_data[row] then
-      interval_data[row] = {}
+    if not interval[row] then
+      interval[row] = {}
     end
-    interval_data[row][no_of_note_columns * 2 + 1] = dissect_chord_wrapper(unpack(chord_actual[row]))
+    interval[row][no_of_note_columns * 2 + 1] = dissect_chord_wrapper(unpack(chord_actual[row]))
     -- Lingering chord dissonance only makes sense if no lines were omitted
-    if complete then interval_data[row][no_of_note_columns * 2 + 2] = dissect_chord_wrapper(unpack(chord_linger[row]))
-    else             interval_data[row][no_of_note_columns * 2 + 2] = nil
+    if complete then interval[row][no_of_note_columns * 2 + 2] = dissect_chord_wrapper(unpack(chord_linger[row]))
+    else             interval[row][no_of_note_columns * 2 + 2] = nil
     end
   end
 end
@@ -697,37 +525,38 @@ end
 
 -- Check for some violations according to the counterpoint (Kontrapunkt) system
 function counterpoint_warnings(data)
-  local interval           = data.interval
-  local no_of_note_columns = data.no_of_note_columns
-  local fifths             = {}
-  local fourths            = {}
-  local octaves            = {}
-  local violations         = ""
-  for row = 1, #interval do
-    local has_fifth  = false
-    local has_fourth = false
-    local has_octave = false
-    for col = 1, no_of_note_columns do
-      if interval[row][col] then
-        if interval[row][col] ==  5 then has_fourth = true end
-        if interval[row][col] ==  7 then has_fifth  = true end
-        if interval[row][col] == 12 then has_octave = true end
-      end
+    local interval           = data.interval
+    local no_of_note_columns = data.no_of_note_columns
+    local fifths             = {}
+    local fourths            = {}
+    local octaves            = {}
+    local violations         = ""
+    for row = 1, #interval do
+        local has_fifth  = false
+        local has_fourth = false
+        local has_octave = false
+        for col = 1, no_of_note_columns * 2 do
+            local t = interval[row][col]
+            if type(t) == 'table' then
+                if t.interval ==  5 then has_fourth = true end
+                if t.interval ==  7 then has_fifth  = true end
+                if t.interval == 12 then has_octave = true end
+            end
+        end
+        fourths[row] = has_fourth
+        fifths [row] = has_fifth
+        octaves[row] = has_octave
     end
-    fourths[row] = has_fourth
-    fifths [row] = has_fifth
-    octaves[row] = has_octave
-  end
-  for row = 2, #interval do
-    if fifths [row] and fifths [row - 1] then violations = violations.."5-5 "   end
-    if octaves[row] and octaves[row - 1] then violations = violations.."12-12 " end
-  end
-  for row = 3, #interval do
-    if fifths[row] and fourths[row - 1] and fifths[row - 2] then violations = violations.."5-4-5 " end
-  end
-  if violations ~= "" then
-    data.counterpoint = { code = COUNTERPOINT_PATTERN_VIOLATION, details = violations }
-  end
+    for row = 2, #interval do
+        if fifths [row] and fifths [row - 1] then violations = violations.."5-5 "   end
+        if octaves[row] and octaves[row - 1] then violations = violations.."12-12 " end
+    end
+    for row = 3, #interval do
+        if fifths[row] and fourths[row - 1] and fifths[row - 2] then violations = violations.."5-4-5 " end
+    end
+    if violations ~= "" then
+        data.counterpoint = { code = COUNTERPOINT_PATTERN_VIOLATION, details = violations }
+    end
 end
 
 --  _  _ ____ _ _  _
@@ -770,7 +599,6 @@ function calculate_intervals()
   local data = note_matrix(lines, no_of_note_columns, left_out)
 
   data.interval         = {}
-  data.interval_data    = {}
   data.counterpoint     = {}
   data.status           = status
 
@@ -788,3 +616,4 @@ function calculate_intervals()
   local control_dialog = renoise.app():show_custom_dialog("Interval Analysis", dialog_content)
   update_interface(vb, settings, data)
 end
+

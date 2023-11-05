@@ -123,15 +123,17 @@ local CONSONANCE_MAJOR_TRIAD    =  3.91
 
 local function assert_interval_dissonance(expected, note1, note2, volume1, volume2, message)
     local single_line = message:gsub("\n"," ")
-    local _, wrapper = interval_properties(note1, note2, volume1, volume2)
-    local interval, halftones, _, _, a, b, cents, p, frequency1, frequency2, actual = wrapper(nil)
+    local interval = new_interval(note1, note2, volume1, volume2)
+    -- local _, wrapper =
+    local properties = interval:properties()
+    local actual = properties.dissonance
     assert(is_almost(expected, actual), single_line.." - dissonance of "..actual.." doesn't match expected dissonance of "..expected)
     test_log("Verified dissonance for '"..single_line.."': "..actual)
 end
 
 local function assert_chord_dissonance(expected, chord, message)
     local single_line = message:gsub("\n"," ")
-    local actual = dissect_chord(1, nil, nil, unpack(chord))
+    local actual = dissect_chord(1, nil, unpack(chord))
     assert(is_almost(expected, actual), single_line.." - dissonance of "..actual.." doesn't match expected dissonance of "..expected)
     test_log("Verified chord dissonance for '"..single_line.."': "..actual)
 end
@@ -198,6 +200,7 @@ local function test_pure_intervals()
     assert_interval_dissonance(CONSONANCE_MAJOR_SEVENTH , 1, 12, 80, 80, interval_texts["en"][12])
     assert_interval_dissonance(CONSONANCE_PERFECT_OCTAVE, 1, 13, 80, 80, interval_texts["en"][13])
     assert_interval_dissonance(CONSONANCE_TWO_OCTAVES   , 1, 25, 80, 80, "Two octaves")
+    assert_interval_dissonance(1, 1, 13, nil, nil, "Octave - nil volume")
 end
 
 --  ___ ____ ____ ___ ____     ____ ___  ___  ____ ____ _  _ _ _  _ ____ ___ _ ____ _  _
@@ -363,10 +366,8 @@ end
 local function assert_volume_percentage(input, expected)
     local actual = { volume_percentage(unpack(input)) }
     assert(equals(actual, expected), "Volume percentage does not match")
-    test_log("Verified volume percentage")
+    test_log("Verified volume percentage "..unpack(expected))
 end
-
-
 
 local function test_volume_percentage()
     assert_volume_percentage({  80, 50, 20, 10 }, { 0.5000, 0.3125, 0.1250, 0.0625 })
