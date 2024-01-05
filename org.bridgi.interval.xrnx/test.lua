@@ -45,6 +45,7 @@ Document = {
 }
 
 local HEARING_THRESHOLD = 0.011
+local MAX_LINES = 4
 
 function Document:create(test)
  return function(mock) return {
@@ -59,6 +60,15 @@ function Document:create(test)
      },
      hearing_threshold = {
          value = HEARING_THRESHOLD
+     },
+     max_delta = {
+         value = 99
+     },
+     max_lines = {
+         value = MAX_LINES
+     },
+     volume_reduction = {
+         value = 0.20
      }
  }  end
 end
@@ -256,8 +266,8 @@ local PYTHAGOREAN_C5  = 1042.96
 local PYTHAGOREAN_Db5 = 1113.75
 local PYTHAGOREAN_D5  = 1173.33
 
-local function assert_pythagorean(expected_hz, frequencies, note, message)
-    local actual_hz = pythagorean_frequency(frequencies, note)
+local function assert_pythagorean(expected_hz, note, message)
+    local actual_hz = pythagorean_frequency(note)
     assert(is_almost(actual_hz, expected_hz), "Pythagorean "..message..": Expected "..expected_hz.."Hz, but got "..actual_hz.."Hz")
     test_log("Verified Pythagorean frequency "..expected_hz.." for "..message)
 end
@@ -270,27 +280,26 @@ end
 local function test_pythagorean_wolf_fifth()
     -- C  C#  D  D#  E  F  F#  G  G#  A  A#  B
     -- 48 49  50 51  52 53 54  55 56  57 58  59
-    local frequencies = pythagorean_frequencies()
-    local a, b, _, _, _, _, wolf = pythagorean_interval(56, 63, -1, 0, 0.5,  { frequencies = frequencies })
+    local a, b, _, _, _, _ = pythagorean_interval(56, 63, -1, 0)
+    local wolf = dissonance_value(1, 0.5, 2, Ratios:single(a, b))
     assert(is_almost(wolf, CONSONANCE_PYTHAGOREAN_WOLF_FIFTH), "Wrong dissonance of wolf fifth: ".. wolf)
     assert(a == 22 and b == 15, "Wrong frequency ratio for wolf fifth: "..a.."/"..b..", expected 22/15")
 end
 
 local function test_pythagorean_frequencies()
-    local frequencies = pythagorean_frequencies()
-    assert_pythagorean(PYTHAGOREAN_D4 , frequencies, 62, "D4")
-    assert_pythagorean(PYTHAGOREAN_Eb4, frequencies, 63, "Eb4")
-    assert_pythagorean(PYTHAGOREAN_E4 , frequencies, 64, "E4")
-    assert_pythagorean(PYTHAGOREAN_F4 , frequencies, 65, "F4")
-    assert_pythagorean(PYTHAGOREAN_Gb4, frequencies, 66, "Gb4")
-    assert_pythagorean(PYTHAGOREAN_G4 , frequencies, 67, "G4")
-    assert_pythagorean(PYTHAGOREAN_Ab4, frequencies, 68, "Ab4")
-    assert_pythagorean(PYTHAGOREAN_A4 , frequencies, 69, "A4")
-    assert_pythagorean(PYTHAGOREAN_Bb4, frequencies, 70, "Bb4")
-    assert_pythagorean(PYTHAGOREAN_B4 , frequencies, 71, "B4")
-    assert_pythagorean(PYTHAGOREAN_C5 , frequencies, 72, "C5")
-    assert_pythagorean(PYTHAGOREAN_Db5, frequencies, 73, "Db5")
-    assert_pythagorean(PYTHAGOREAN_D5 , frequencies, 74, "D5")
+    assert_pythagorean(PYTHAGOREAN_D4 , 62, "D4")
+    assert_pythagorean(PYTHAGOREAN_Eb4, 63, "Eb4")
+    assert_pythagorean(PYTHAGOREAN_E4 , 64, "E4")
+    assert_pythagorean(PYTHAGOREAN_F4 , 65, "F4")
+    assert_pythagorean(PYTHAGOREAN_Gb4, 66, "Gb4")
+    assert_pythagorean(PYTHAGOREAN_G4 , 67, "G4")
+    assert_pythagorean(PYTHAGOREAN_Ab4, 68, "Ab4")
+    assert_pythagorean(PYTHAGOREAN_A4 , 69, "A4")
+    assert_pythagorean(PYTHAGOREAN_Bb4, 70, "Bb4")
+    assert_pythagorean(PYTHAGOREAN_B4 , 71, "B4")
+    assert_pythagorean(PYTHAGOREAN_C5 , 72, "C5")
+    assert_pythagorean(PYTHAGOREAN_Db5, 73, "Db5")
+    assert_pythagorean(PYTHAGOREAN_D5 , 74, "D5")
 end
 
 --  ___ ____ ____ ___ ____     ____ ____ _  _ ____ _       ___ ____ _  _ ___  ____ ____ ____ _  _ ____ _  _ ___
@@ -374,11 +383,344 @@ local function test_volume_percentage()
     assert_volume_percentage({   0,  0,  0,  0 }, { 0.0000, 0.0000, 0.0000, 0.0000 })
 end
 
+--  ___ ____ ____ ___ ____     ____ ___ _  _ ____ ____
+--   |  |___ [__   |  [__  .   |  |  |  |__| |___ |__/
+--   |  |___ ___]  |  ___] .   |__|  |  |  | |___ |  \
+--
+
+local function test_order_comparison()
+    local l1 = { sequence = 1, line = 1}
+    local l2 = { sequence = 1, line = 2}
+    local l3 = { sequence = 2, line = 1}
+    assert(is_before_line(l1, l2), dump(l1).." should be identified as being before "..dump(l2))
+    assert(not is_before_line(l1, l1), dump(l1).." should not be identified as being before "..dump(l1))
+    assert(is_before_line(l2, l3), dump(l2).." should be identified as being before "..dump(l3))
+    assert(is_after_line(l2, l1), dump(l2).." should be identified as being after "..dump(l1))
+    assert(not is_after_line(l1, l1), dump(l1).." should not be identified as being after "..dump(l1))
+    assert(is_after_line(l3, l2), dump(l2).." should be identified as being after "..dump(l3))
+    assert(is_same_line(l1, l1), dump(l1).." should be identified as the same as "..dump(l1))
+    assert(not is_same_line(l1, l2), dump(l1).." should be not be identified as the same as "..dump(l2))
+    assert(not is_same_line(l1, l3), dump(l1).." should be not be identified as the same as "..dump(l3))
+end
+
+--  ___ ____ ____ ___ ____     ____ ____ _  _ ___  ____ _  _ ____ ____ ___     _  _ _ ____ _ _ _
+--   |  |___ [__   |  [__  .   |    |  | |\ | |  \ |___ |\ | [__  |___ |  \    |  | | |___ | | |
+--   |  |___ ___]  |  ___] .   |___ |__| | \| |__/ |___ | \| ___] |___ |__/     \/  | |___ |_|_|
+--
+
+local function assert_vertical_interval(notes, expected, row, column)
+    local interval = notes[row][column].vertical
+    local halftones = interval and interval.halftones or nil
+    assert(halftones == expected, "Expected "..dump(expected).." at "..row.."/"..column..", but got "..dump(halftones))
+    test_log("Successfully verified vertical interval at "..row.."/"..column.." : "..dump(halftones))
+end
+
+local function assert_horizontal_interval(notes, expected, row, column)
+    local interval = notes[row][column].horizontal
+    local halftones = interval and interval.halftones or nil
+    assert(halftones == expected, "Expected "..dump(expected).." at "..row.."/"..column..", but got "..dump(halftones))
+    test_log("Successfully verified horizontal interval at "..row.."/"..column.." : "..dump(halftones))
+end
+
+
+local function test_find_lines_of_interest_minimum()
+    local patterns = {}
+    patterns[1] = {
+        number_of_lines = 3,
+        tracks = {}
+    }
+    patterns[1].tracks[1] = {
+        visible_note_columns = 3,
+        lines = {}
+    }
+    patterns[1].tracks[1].lines[1] = { note_columns = {} }
+    patterns[1].tracks[1].lines[1].note_columns[1] = { note_value = 52, note_string = "E3", volume_value = 80 }
+    patterns[1].tracks[1].lines[1].note_columns[2] = { note_value = 55, note_string = "G3", volume_value = 80 }
+    patterns[1].tracks[1].lines[1].note_columns[3] = { note_value = 57, note_string = "A3", volume_value = 80 }
+    patterns[1].tracks[1].lines[2] = { note_columns = {} }
+    patterns[1].tracks[1].lines[2].note_columns[1] = { note_value = nil }
+    patterns[1].tracks[1].lines[2].note_columns[2] = { note_value = nil }
+    patterns[1].tracks[1].lines[2].note_columns[3] = { note_value = nil }
+    patterns[1].tracks[1].lines[3] = { note_columns = {} }
+    patterns[1].tracks[1].lines[3].note_columns[1] = { note_value = 53, note_string = "F3", volume_value = 80 }
+    patterns[1].tracks[1].lines[3].note_columns[2] = { note_value = nil }
+    patterns[1].tracks[1].lines[3].note_columns[3] = { note_value = nil }
+    patterns[2] = {
+        number_of_lines = 3,
+        tracks = {}
+    }
+    patterns[2].tracks[1] = {
+        visible_note_columns = 3,
+        lines = {}
+    }
+    patterns[2].tracks[1].lines[1] = { note_columns = {} }
+    patterns[2].tracks[1].lines[1].note_columns[1] = { note_value = 52, note_string = "E3", volume_value = 80 }
+    patterns[2].tracks[1].lines[1].note_columns[2] = { note_value = nil }
+    patterns[2].tracks[1].lines[1].note_columns[3] = { note_value = nil }
+    patterns[2].tracks[1].lines[2] = { note_columns = {} }
+    patterns[2].tracks[1].lines[2].note_columns[1] = { note_value = 53, note_string = "F3", volume_value = 80 }
+    patterns[2].tracks[1].lines[2].note_columns[2] = { note_value = 67, note_string = "G4", volume_value = 80 }
+    patterns[2].tracks[1].lines[2].note_columns[3] = { note_value = nil }
+    patterns[2].tracks[1].lines[3] = { note_columns = {} }
+    patterns[2].tracks[1].lines[3].note_columns[1] = { note_value = 52, note_string = "E3", volume_value = 80 }
+    patterns[2].tracks[1].lines[3].note_columns[2] = { note_value = 55, note_string = "G3", volume_value = 80 }
+    patterns[2].tracks[1].lines[3].note_columns[3] = { note_value = nil }
+    patterns[3] = {
+        number_of_lines = 3,
+        tracks = {}
+    }
+    patterns[3].tracks[1] = {
+        visible_note_columns = 3,
+        lines = {}
+    }
+    patterns[3].tracks[1].lines[1] = { note_columns = {} }
+    patterns[3].tracks[1].lines[1].note_columns[1] = { note_value = 52, note_string = "E3", volume_value = 80 }
+    patterns[3].tracks[1].lines[1].note_columns[2] = { note_value = nil }
+    patterns[3].tracks[1].lines[1].note_columns[3] = { note_value = nil }
+    patterns[3].tracks[1].lines[2] = { note_columns = {} }
+    patterns[3].tracks[1].lines[2].note_columns[1] = { note_value = 52, note_string = "E3", volume_value = 80 }
+    patterns[3].tracks[1].lines[2].note_columns[2] = { note_value = nil }
+    patterns[3].tracks[1].lines[2].note_columns[3] = { note_value = nil }
+    patterns[3].tracks[1].lines[3] = { note_columns = {} }
+    patterns[3].tracks[1].lines[3].note_columns[1] = { note_value = 52, note_string = "E3", volume_value = 80 }
+    patterns[3].tracks[1].lines[3].note_columns[2] = { note_value = 55, note_string = "G3", volume_value = 80 }
+    patterns[3].tracks[1].lines[3].note_columns[3] = { note_value = 45, note_string = "A2", volume_value = 80 }
+    patterns[4] = {
+        number_of_lines = 3,
+        tracks = {}
+    }
+    patterns[4].tracks[1] = {
+        visible_note_columns = 3,
+        lines = {}
+    }
+    patterns[4].tracks[1].lines[1] = { note_columns = {} }
+    patterns[4].tracks[1].lines[1].note_columns[1] = { note_value = nil }
+    patterns[4].tracks[1].lines[1].note_columns[2] = { note_value = nil }
+    patterns[4].tracks[1].lines[1].note_columns[3] = { note_value = nil }
+    patterns[4].tracks[1].lines[2] = { note_columns = {} }
+    patterns[4].tracks[1].lines[2].note_columns[1] = { note_value = 59, note_string = "B3", volume_value = 80 }
+    patterns[4].tracks[1].lines[2].note_columns[2] = { note_value = nil }
+    patterns[4].tracks[1].lines[2].note_columns[3] = { note_value = nil }
+    patterns[4].tracks[1].lines[3] = { note_columns = {} }
+    patterns[4].tracks[1].lines[3].note_columns[1] = { note_value = nil }
+    patterns[4].tracks[1].lines[3].note_columns[2] = { note_value = nil }
+    patterns[4].tracks[1].lines[3].note_columns[3] = { note_value = nil }
+    local song = {
+        selected_track_index = 1,
+        selected_sequence_index = 1,
+        patterns = patterns,
+        sequencer = {
+            pattern_sequence = {}
+        },
+        transport = {
+           edit_pos = {
+               line = 1
+           }
+       },
+       tracks = {}
+    }
+    song.tracks[1] = { visible_note_columns = 3}
+    song.tracks[2] = { visible_note_columns = 3}
+    song.tracks[3] = { visible_note_columns = 3}
+    song.tracks[4] = { visible_note_columns = 3}
+    song.sequencer.pattern_sequence[1] = 1
+    song.sequencer.pattern_sequence[2] = 2
+    song.sequencer.pattern_sequence[3] = 3
+    song.sequencer.pattern_sequence[4] = 4
+
+    local sequence_index = song.selected_sequence_index
+    local pattern_index = song.sequencer.pattern_sequence[sequence_index]
+    local track_index = song.selected_track_index
+    local pattern_track = song.patterns[pattern_index].tracks[track_index]
+    local line_index = song.transport.edit_pos.line
+    local track = song.tracks[track_index]
+    local position = position_key(sequence_index, line_index)
+    local lines = find_lines_of_interest(song, track, pattern_track, position)
+    local count, first, last = line_statistics(lines)
+
+    assert(count == MAX_LINES, "Expected "..MAX_LINES..", but got "..count.." lines")
+    assert(first.sequence == 1 and first.line == 1, "Expected first sequence/ line to be 1/1, but got "..dump(first))
+    assert(last.sequence == 3 and last.line == 3, "Expected last sequence/ line to be 3/3, but got "..dump(last))
+    test_log("Successfully verified search for lines of interest (minimum)")
+
+    local view = create_condensed_view(lines, track.visible_note_columns)
+
+    assert_vertical_interval(view.notes, 1  , 1, 1)
+    assert_vertical_interval(view.notes, nil, 1, 2)
+    assert_vertical_interval(view.notes, nil, 1, 3)
+
+    assert_vertical_interval(view.notes, 0  , 2, 1)
+    assert_vertical_interval(view.notes, 12 , 2, 2)
+    assert_vertical_interval(view.notes, nil, 2, 3)
+
+    assert_vertical_interval(view.notes, -1 , 3, 1)
+    assert_vertical_interval(view.notes, -12, 3, 2)
+    assert_vertical_interval(view.notes, -12, 3, 3)
+
+    assert_vertical_interval(view.notes, nil, 4, 1)
+    assert_vertical_interval(view.notes, nil, 4, 2)
+    assert_vertical_interval(view.notes, nil, 4, 3)
+
+    assert_horizontal_interval(view.notes, 3  , 1, 1)
+    assert_horizontal_interval(view.notes, 2  , 1, 2)
+    assert_horizontal_interval(view.notes, nil, 1, 3)
+
+    assert_horizontal_interval(view.notes, nil, 2, 1)
+    assert_horizontal_interval(view.notes, nil, 2, 2)
+    assert_horizontal_interval(view.notes, nil, 2, 3)
+
+    assert_horizontal_interval(view.notes, 14 , 3, 1)
+    assert_horizontal_interval(view.notes, nil, 3, 2)
+    assert_horizontal_interval(view.notes, nil, 3, 3)
+
+    assert_horizontal_interval(view.notes, 3  , 4, 1)
+    assert_horizontal_interval(view.notes, -10, 4, 2)
+    assert_horizontal_interval(view.notes, nil, 4, 3)
+
+    check_counterpoint(view)
+    test_log("Counterpoint: "..dump(view.counterpoint))
+    assert(view.counterpoint.details == "12-12 ", "Expected 12-12, but got ".. view.counterpoint.details)
+
+    --test_log("View: "..dump(view.view))
+  --  for i1, v1 in ipairs(view.view) do
+   --     for i2, v2 in ipairs(v1) do
+    --        test_log("View at "..i1.."/"..i2..": "..dump(v2.horizontal))
+     --   end
+    --end
+end
+
+-- This test is expected to find intervals for each column right away with the first two rows
+-- and essentially checks if adding additional lines before and after these two lines works,
+-- as the number of rows to be displayed is assumed to be four (see settings)
+local function test_find_lines_of_interest_additional()
+    local patterns = {}
+    patterns[1] = {
+        number_of_lines = 3,
+        tracks = {}
+    }
+    patterns[1].tracks[1] = {
+        visible_note_columns = 3,
+        lines = {}
+    }
+    patterns[1].tracks[1].lines[1] = { note_columns = {} }
+    patterns[1].tracks[1].lines[1].note_columns[1] = { note_value = 52, note_string = "E3", volume_value = 80 }
+    patterns[1].tracks[1].lines[1].note_columns[2] = { note_value = 55, note_string = "G3", volume_value = 80 }
+    patterns[1].tracks[1].lines[1].note_columns[3] = { note_value = 57, note_string = "A3", volume_value = 80 }
+    patterns[1].tracks[1].lines[2] = { note_columns = {} }
+    patterns[1].tracks[1].lines[2].note_columns[1] = { note_value = 52, note_string = "E3", volume_value = 80 }
+    patterns[1].tracks[1].lines[2].note_columns[2] = { note_value = 55, note_string = "G3", volume_value = 80 }
+    patterns[1].tracks[1].lines[2].note_columns[3] = { note_value = 55, note_string = "G3", volume_value = 80 }
+    patterns[1].tracks[1].lines[3] = { note_columns = {} }
+    patterns[1].tracks[1].lines[3].note_columns[1] = { note_value = nil }
+    patterns[1].tracks[1].lines[3].note_columns[2] = { note_value = nil }
+    patterns[1].tracks[1].lines[3].note_columns[3] = { note_value = nil }
+    patterns[2] = {
+        number_of_lines = 3,
+        tracks = {}
+    }
+    patterns[2].tracks[1] = {
+        visible_note_columns = 3,
+        lines = {}
+    }
+    patterns[2].tracks[1].lines[1] = { note_columns = {} }
+    patterns[2].tracks[1].lines[1].note_columns[1] = { note_value = 52, note_string = "E3", volume_value = 80 }
+    patterns[2].tracks[1].lines[1].note_columns[2] = { note_value = 55, note_string = "G3", volume_value = 80 }
+    patterns[2].tracks[1].lines[1].note_columns[3] = { note_value = 55, note_string = "G3", volume_value = 80 }
+    patterns[2].tracks[1].lines[2] = { note_columns = {} }
+    patterns[2].tracks[1].lines[2].note_columns[1] = { note_value = 52, note_string = "E3", volume_value = 80 }
+    patterns[2].tracks[1].lines[2].note_columns[2] = { note_value = 55, note_string = "G3", volume_value = 80 }
+    patterns[2].tracks[1].lines[2].note_columns[3] = { note_value = 55, note_string = "G3", volume_value = 80 }
+    patterns[2].tracks[1].lines[3] = { note_columns = {} }
+    patterns[2].tracks[1].lines[3].note_columns[1] = { note_value = 52, note_string = "E3", volume_value = 80 }
+    patterns[2].tracks[1].lines[3].note_columns[2] = { note_value = 55, note_string = "G3", volume_value = 80 }
+    patterns[2].tracks[1].lines[3].note_columns[3] = { note_value = 55, note_string = "G3", volume_value = 80 }
+    patterns[3] = {
+        number_of_lines = 3,
+        tracks = {}
+    }
+    patterns[3].tracks[1] = {
+        visible_note_columns = 3,
+        lines = {}
+    }
+    patterns[3].tracks[1].lines[1] = { note_columns = {} }
+    patterns[3].tracks[1].lines[1].note_columns[1] = { note_value = 52, note_string = "E3", volume_value = 80 }
+    patterns[3].tracks[1].lines[1].note_columns[2] = { note_value = nil }
+    patterns[3].tracks[1].lines[1].note_columns[3] = { note_value = nil }
+    patterns[3].tracks[1].lines[2] = { note_columns = {} }
+    patterns[3].tracks[1].lines[2].note_columns[1] = { note_value = 52, note_string = "E3", volume_value = 80 }
+    patterns[3].tracks[1].lines[2].note_columns[2] = { note_value = nil }
+    patterns[3].tracks[1].lines[2].note_columns[3] = { note_value = nil }
+    patterns[3].tracks[1].lines[3] = { note_columns = {} }
+    patterns[3].tracks[1].lines[3].note_columns[1] = { note_value = 52, note_string = "E3", volume_value = 80 }
+    patterns[3].tracks[1].lines[3].note_columns[2] = { note_value = 55, note_string = "G3", volume_value = 80 }
+    patterns[3].tracks[1].lines[3].note_columns[3] = { note_value = 57, note_string = "A3", volume_value = 80 }
+    patterns[4] = {
+        number_of_lines = 3,
+        tracks = {}
+    }
+    patterns[4].tracks[1] = {
+        visible_note_columns = 3,
+        lines = {}
+    }
+    patterns[4].tracks[1].lines[1] = { note_columns = {} }
+    patterns[4].tracks[1].lines[1].note_columns[1] = { note_value = nil }
+    patterns[4].tracks[1].lines[1].note_columns[2] = { note_value = nil }
+    patterns[4].tracks[1].lines[1].note_columns[3] = { note_value = nil }
+    patterns[4].tracks[1].lines[2] = { note_columns = {} }
+    patterns[4].tracks[1].lines[2].note_columns[1] = { note_value = 59, note_string = "B3", volume_value = 80 }
+    patterns[4].tracks[1].lines[2].note_columns[2] = { note_value = nil }
+    patterns[4].tracks[1].lines[2].note_columns[3] = { note_value = nil }
+    patterns[4].tracks[1].lines[3] = { note_columns = {} }
+    patterns[4].tracks[1].lines[3].note_columns[1] = { note_value = nil }
+    patterns[4].tracks[1].lines[3].note_columns[2] = { note_value = nil }
+    patterns[4].tracks[1].lines[3].note_columns[3] = { note_value = nil }
+    local song = {
+        selected_track_index = 1,
+        selected_sequence_index = 1,
+        patterns = patterns,
+        sequencer = {
+            pattern_sequence = {}
+        },
+        transport = {
+            edit_pos = {
+                line = 3
+            }
+        },
+        tracks = {}
+    }
+    song.tracks[1] = { visible_note_columns = 3}
+    song.tracks[2] = { visible_note_columns = 3}
+    song.tracks[3] = { visible_note_columns = 3}
+    song.tracks[4] = { visible_note_columns = 3}
+    song.sequencer.pattern_sequence[1] = 1
+    song.sequencer.pattern_sequence[2] = 2
+    song.sequencer.pattern_sequence[3] = 3
+    song.sequencer.pattern_sequence[4] = 4
+
+    local sequence_index = song.selected_sequence_index
+    local pattern_index = song.sequencer.pattern_sequence[sequence_index]
+    local track_index = song.selected_track_index
+    local pattern_track = song.patterns[pattern_index].tracks[track_index]
+    local line_index = song.transport.edit_pos.line
+    local track = song.tracks[track_index]
+    local position = position_key(sequence_index, line_index)
+    local lines = find_lines_of_interest(song, track, pattern_track, position)
+    local count, first, last = line_statistics(lines)
+
+    assert(count == MAX_LINES, "Expected "..MAX_LINES..", but got "..count.." lines")
+    assert(first.sequence == 1 and first.line == 1, "Expected first sequence/ line to be 1/1, but got "..dump(first))
+    assert(last.sequence == 2 and last.line == 2, "Expected last sequence/ line to be 2/2, but got "..dump(last))
+    test_log("Successfully verified search for lines of interest (additional)")
+end
+
 --  ___ ____ ____ ___    ____ _  _ ____ ____ _  _ ___ _ ____ _  _
 --   |  |___ [__   |     |___  \/  |___ |    |  |  |  | |  | |\ |
 --   |  |___ ___]  |     |___ _/\_ |___ |___ |__|  |  | |__| | \|
 --
 
+test_find_lines_of_interest_minimum()
+test_find_lines_of_interest_additional()
+test_order_comparison()
 test_volume_percentage()
 test_schildkraut()
 test_equal_temperament()

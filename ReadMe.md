@@ -5,28 +5,22 @@
 
 ## Overview
 
-This plugin for [renoise](https://www.renoise.com)(tm) is a novice's attempt to approach
-the subject of music theory from a mathematical viewpoint. The motivation is to provide
-an aid to compensate for lack of ear training or musical education in general and to
-speed up learning.
+This plugin for [renoise](https://www.renoise.com)(tm)  
+- calculates of a **consonance value**, as described by Werner Brefeld (see references)
+- determines the **interval** of dyads for up to 24 halftones of the twelve-tone system
+- displays **emotional effects** for intervals between 0 and 12 halftones
+- calculates **cents** for intervals
 
-The main features, which are implemented as different views, are
-- Determination of the **interval** of two notes for intervals between 0 and 24
-  halftones of the twelve-tone system
-- Calculation of a **consonance value**, as described by Werner Brefeld (see references)
-- Display an **emotional effect** of these intervals for intervals between 0 and 12
-  halftones
-- Display of the interval in the unit **cents**
+The main design objectives for this plugin is to aid musical composition training in
+general as well as to compensate for lack of ear training.
 
 Currently, English and German language are supported.
 
 In addition to the features above, a rudimentary detection of a few counterpoint violations
-is available:
+is available and will be indicated in the status bar at the bottom of the analysis window.
 - Consecutive fifths
 - Consecutive octaves
 - Fifth - fourth - fifth 
-
-A violation will be indicated at the bottom of the interval analysis.
 
 Pls. note that the note matrix used to display these features is optimized in a way, that
 note lines forming intervals are prioritized, which means, that there might be note lines
@@ -36,14 +30,12 @@ If note lines are left out, a status bar will indicate this fact. Not all featur
 available, if note lines are left out. The calculation of lingering chord consonance values
 is not performed. Also, the detection of invalid counterpoint patterns is disabled.
 
-I consider this tool as a beta version. 
-
 ## Consonance Value
 
 Roughly explained, the consonance value is an **approximation** to the expected level of
 consonance or dissonance, basically calculated by
 
-![Formula](product.png)
+![Formula](images/product.png)
 
 having a/ b as the frequency ratios, in its lowest terms, either of the pure intervals or
 of a chosen tuning, and v as the volume percentage. Volume differences are dissected into
@@ -64,31 +56,31 @@ first screenshot from renoise(tm) below. The selection itself does not affect wh
 are considered for the analysis. The position of the edit cursor is taken as reference.
 The selection is only for illustrative purposes.
 
-![Screenshot0](Screenshot0.png)
+![Screenshot0](images/Screenshot0.png)
 
 If you start the tool e.g. from the editor position in line 38, the display will be as shown
 in the second screenshot. It is highly recommended to assign a keyboard shortcut to the
 tool for quick access. The corresponding entry in renoise(tm) can be found under
 "Global/Tools/Interval Calculator".
 
-![Screenshot1](Screenshot1.png)
+![Screenshot1](images/Screenshot1.png)
 
 In the upper left corner there is a possibility to switch between the features mentioned
 above. In the case of the consonance value (abbreviated as "sonance"), the picture is as
 shown in the third screenshot.
 
-![Screenshot2](Screenshot2.png)
+![Screenshot2](images/Screenshot2.png)
 
 Another example concerning the calculation of the consonance value, showing an augmented
 triad and the dominant seventh chord:
 
-![Screenshot3](Screenshot3.png)
+![Screenshot3](images/Screenshot3.png)
 
 Yet another example concerning the calculation of the consonance value, this time for the
 Pythagorean tuning on D, showing the imperfect fifth or wolf fifth with a significantly
 higher dissonance of 18.17 instead of 2.45.
 
-![Screenshot3](Screenshot4.png)
+![Screenshot3](images/Screenshot4.png)
 
 ## A Note about Tuning
 

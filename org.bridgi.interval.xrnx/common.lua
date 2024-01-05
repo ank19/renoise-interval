@@ -50,19 +50,36 @@ function cache_key(...)
     return s
 end
 
---- Dump object
+-- Check if two lines are the the same
+function is_same_line(line, another_line)
+    return line.sequence == another_line.sequence and line.line == another_line.line
+end
+
+-- Check if one line is before another
+function is_before_line(line, another_line)
+    return line.sequence < another_line.sequence or (line.sequence == another_line.sequence and line.line < another_line.line)
+end
+
+-- Check if one line is after another
+function is_after_line(line, another_line)
+    return line.sequence > another_line.sequence or (line.sequence == another_line.sequence and line.line > another_line.line)
+end
+
+-- Dump object
 function dump(o)
     if type(o) == 'table' then
         local s = '{ '
         for k,v in pairs(o) do
-            if type(k) ~= 'number' then k = '"'..k..'"' end
+            if type(k) ~= 'number' then k = '"'..dump(k)..'"' end
             s = s .. '['..k..'] = ' .. dump(v) .. ','
         end
         return s .. '} '
     elseif type(o) == 'nil' then
         return "(NIL)"
-    elseif type(o) == 'string' then
+    elseif type(o) == 'function' then
         return "(function)"
+    elseif type(o) == 'string' then
+        return o
     else
         return tostring(o)
     end

@@ -9,6 +9,8 @@ local DEFAULT_CONTROL_HEIGHT       = renoise.ViewBuilder.DEFAULT_CONTROL_HEIGHT
 local DEFAULT_DIALOG_BUTTON_HEIGHT = renoise.ViewBuilder.DEFAULT_DIALOG_BUTTON_HEIGHT
 local DEFAULT_MINI_CONTROL_HEIGHT  = renoise.ViewBuilder.DEFAULT_MINI_CONTROL_HEIGHT
 
+local SEPARATOR_WIDTH              = 10
+
 function configuration_section(vb, settings, calculation_results)
     return vb:row { vb:column { vb:row {
                 vb:space  { width    = 5 },
@@ -177,11 +179,14 @@ function configuration_section(vb, settings, calculation_results)
                                         max     = 255,
                                         active  = true,
                                         bind    = settings.max_delta },
-            }
+            },
+            vb:space  { width = 10 },
+            vb:column { vb:text       { id      = ID_SETTINGS_REOPEN_NOTE,
+                                        text    = "???" }}
         }
 end
 
-function table_header(vb, no_of_note_columns, per_column_width, settings)
+function table_header(vb, no_of_note_columns, per_column_width, display_chords)
     local head_aligner = vb:horizontal_aligner { width = no_of_note_columns * 40,
                                                  mode  = "distribute" }
     local head_row = vb:row { width = no_of_note_columns * 40,
@@ -210,8 +215,8 @@ function table_header(vb, no_of_note_columns, per_column_width, settings)
             head_aligner:add_child(column)
         end
     end
-    if settings.chord_calculation.value then
-        head_aligner:add_child(vb:column { vb:button { width  = 10,
+    if display_chords then
+        head_aligner:add_child(vb:column { vb:button { width  = SEPARATOR_WIDTH,
                                                        height = HEADER_HEIGHT,
                                                        active = false,
                                                        color  = COLOR_HEADER_2,
@@ -227,146 +232,121 @@ function table_header(vb, no_of_note_columns, per_column_width, settings)
                                                        height = HEADER_HEIGHT,
                                                        active = false,
                                                        color  = COLOR_HEADER_1,
-                                                       text   = "???"}})
+                                                       text   = "???" }})
     end
     return head_row
 end
 
-function interval_button(vb, per_column_width, row, col)
-    return vb:button { id      = ID_ELEMENT..row.."."..col,
-                       width   = per_column_width,
-                       height  = 30,
-                       color   = COLOR_DEFAULT,
-                       active  = false,
-                       text    = "???\n???\n???" }
-end
-
-function interval_view(vb, per_column_width, row, col)
+function data_button(vb, per_column_width, element, row, col)
     return vb:row { vb:horizontal_aligner { mode   = "center",
                                             width  = per_column_width,
                                             margin = 0,
-                                            interval_button(vb, per_column_width, row, col) }}
+                                            vb:button { id      = ID_ELEMENT..row.."."..col,
+                                                        width   = per_column_width,
+                                                        height  = 30,
+                                                        color   = COLOR_DEFAULT,
+                                                        active  = false,
+                                                        text    = "\n---\n" }}}
 end
 
-function note_button(vb, per_column_width, row, col, calculation_results)
-    local not_a_note = not is_note(calculation_results.value[row][col])
-    local is_marked = calculation_results.marker[row][col]
-    if not_a_note then
+function note_button(vb, per_column_width, element, row, col)
+    local note = element.note
+    if not is_note(note.value) then
         return vb:row { style = "body",
                         vb:horizontal_aligner { mode  = "center",
                                                 width = per_column_width,
                                                 vb:button { width  = per_column_width,
                                                             height = 40,
-                                                            color  = is_marked and COLOR_NO_NOTE_MARKER or COLOR_NO_NOTE,
+                                                            color  = note.marker and COLOR_NO_NOTE_MARKER or COLOR_NO_NOTE,
                                                             active = false,
-                                                            text   = "\n---\n"}}}
+                                                            text   = "\n---\n" }}}
     else
         local note_text = "\n"
-                          ..calculation_results.notes[row][col]
+                          .. note.string
                           .." ("
-                          ..tostring(calculation_results.volume[row][col])
+                          ..tostring(note.volume)
                           ..")\n"
         return vb:row { style = "plain",
                         vb:horizontal_aligner { mode  = "center",
                                                 width = per_column_width,
                                                 vb:button { width  = per_column_width,
                                                             height = 40,
-                                                            color  = is_marked and COLOR_IS_NOTE_MARKER or COLOR_IS_NOTE,
+                                                            color  = note.marker and COLOR_IS_NOTE_MARKER or COLOR_IS_NOTE,
                                                             active = false,
                                                             text   = note_text}}}
     end
 end
 
-function create_view(vb, settings, data)
+function text_button(vb, per_column_width, element, row, col)
+    return vb:row { style = "body",
+                    vb:horizontal_aligner { mode  = "center",
+                                            width = per_column_width,
+                                            vb:text { width  = per_column_width,
+                                                      height = 50,
+                                                      font   = "italic",
+                                                      align  = "center",
+                                                      style  = "disabled",
+                                                      text   = "\n----- "..tostring(element.text).." -----\n" }}}
+end
 
-    local no_of_note_columns = data.no_of_note_columns
-    local notes              = data.notes
-    local steps              = data.steps
-    local value              = data.value
-    local counterpoint       = data.counterpoint
-    local status             = data.status
-
-    local base_width          = 1024
-    local no_of_columns       = no_of_note_columns * 2
-    if settings.chord_calculation.value then
-        no_of_columns = no_of_columns + 2
+function create_dialog(vb, settings, data)
+    local view               = data.view
+    local display_chords     = data.status ~= STATUS_LINES_OMITTED and settings.chord_calculation.value
+    local row_count          = #view
+    local column_count       = #view[1] - (display_chords and 0 or 2)
+    local base_width         = 1280 - SEPARATOR_WIDTH
+    if column_count > 6 then
+        base_width = base_width * 1.5
     end
-    local per_column_width    = base_width / no_of_columns
-    local total_width         = (no_of_note_columns + 1) * per_column_width
-    local configuration_view  = configuration_section(vb, settings, data)
-    local matrix_view         = vb:column { width = total_width, margin = CONTENT_MARGIN }
-    local dialog_content      = vb:column { width = total_width, configuration_view, matrix_view }
-
-    dialog_content:add_child(table_header(vb, no_of_note_columns, per_column_width, settings))
-    dialog_content:add_child(vb:row{ height=5, vb:space {}})
-
-    for rows = 1, #notes do
-        local aligner = vb:horizontal_aligner { width = no_of_note_columns * 40, mode  = "distribute" }
-        local row     = vb:row                { width = no_of_note_columns * 40, aligner }
-        for columns = 1, no_of_note_columns do
+    local per_column_width   = base_width / column_count
+    local total_width        = column_count * per_column_width + SEPARATOR_WIDTH
+    local configuration_view = configuration_section(vb, settings, data)
+    local matrix_view        = vb:column { width = total_width, margin = CONTENT_MARGIN }
+    local dialog_content     = vb:column { width = total_width, configuration_view, matrix_view }
+    dialog_content:add_child(table_header(vb, data.no_of_note_columns, per_column_width, display_chords))
+    dialog_content:add_child(vb:row { height = 5, vb:space {}})
+    for y = 1, row_count do
+        local aligner = vb:horizontal_aligner { width = per_column_width, mode  = "distribute" }
+        local row     = vb:row                { width = per_column_width, aligner }
+        for x = 1, column_count do
             local column = vb:column { width = per_column_width }
-            -- Add note column
-            column:add_child(note_button(vb, per_column_width, rows, columns, data))
-            -- Add a trailing interval column for each note column but the last one
-            -- Lilia wanted to know what a comment is, :-)
-            if rows <= #value - 1 then column:add_child(interval_view(vb, per_column_width, rows, columns * 2)) end
-            aligner:add_child(column)
-            if columns <= no_of_note_columns - 1 then
-                column = vb:column { width = per_column_width }
-                column:add_child(interval_view(vb, per_column_width, rows, columns * 2 + 1))
-                aligner:add_child(column)
-                -- Add a trailing step row for each row but the last one
-                if rows <= #value - 1 then
-                    local step_text = "\n----- "..tostring(steps[rows][columns]).." -----\n"
-                    column:add_child(vb:row { style = "body",
-                                              vb:horizontal_aligner { mode  = "center",
-                                                                      width = per_column_width,
-                                                                      vb:text { width  = per_column_width,
-                                                                                height = 50,
-                                                                                font   = "italic",
-                                                                                align  = "center",
-                                                                                style  = "disabled",
-                                                                                text   = step_text}}})
-                end
+            local element = view[y][x]
+            if display_chords and x == column_count - 1 then
+                -- Add a small separator between the main matrix and the chord columns
+                aligner:add_child( vb:column { vb:button { width  = SEPARATOR_WIDTH,
+                                                           height = 50,
+                                                           active = false,
+                                                           color  = COLOR_BLACK,
+                                                           text   = "\n\n"}})
             end
-        end
-
-        if settings.chord_calculation.value then
-
-            -- Add a small separator between the main matrix and the chord columns
-            aligner:add_child( vb:column { vb:button { width  = 10,
-                                                       height = 50,
-                                                       active = false,
-                                                       color  = COLOR_BLACK,
-                                                       text   = "\n\n"}})
-            -- Add two chord columns
-            aligner:add_child( vb:column { interval_button(vb, per_column_width, rows, (no_of_note_columns * 2 + 1)) })
-            aligner:add_child( vb:column { interval_button(vb, per_column_width, rows, (no_of_note_columns * 2 + 2)) })
+            if     element.type == "note" then column:add_child(note_button(vb, per_column_width, element, y, x))
+            elseif element.type == "data" then column:add_child(data_button(vb, per_column_width, element, y, x))
+            elseif element.type == "text" then column:add_child(text_button(vb, per_column_width, element, y, x))
+            end
+            -- Lilia wanted to know what a comment is, :-)
+            aligner:add_child(column)
         end
         dialog_content:add_child(row)
     end
-
     -- Add a status bar
-    if status then
-        dialog_content:add_child(vb:row { width =  base_width - per_column_width + 10,
-                                          vb:button { width  = base_width- per_column_width + 10,
+    if data.status then
+        dialog_content:add_child(vb:row { width =  total_width + 2,
+                                          vb:button { width  = total_width + 2,
                                                       height = DEFAULT_MINI_CONTROL_HEIGHT,
                                                       id     = ID_STATUS_BAR,
-                                                      color  = status.color,
+                                                      color  = data.status.color,
                                                       active = false,
                                                       text   = "???" }})
     end
-
     -- Add a counterpoint bar
-    if counterpoint then
-        dialog_content:add_child(vb:row { width =  base_width - per_column_width + 10,
-                                          vb:button { width  = base_width- per_column_width + 10,
+    if data.counterpoint then
+        dialog_content:add_child(vb:row { width =  total_width + 2,
+                                          vb:button { width  = total_width + 2,
                                                       height = DEFAULT_MINI_CONTROL_HEIGHT,
                                                       id     = ID_COUNTERPOINT_BAR,
                                                       color  = COLOR_STATUS_WARNING,
                                                       active = false,
                                                       text   = "???" }})
     end
-
     return dialog_content
 end

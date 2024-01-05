@@ -2,6 +2,10 @@ require 'maths'
 require 'settings'
 require 'common'
 
+--  ____ ____ ___ _ ____ ____
+--  |__/ |__|  |  | |  | [__
+--  |  \ |  |  |  | |__| ___]
+--
 
 Ratios = {}
 
@@ -41,10 +45,10 @@ function Ratios:tostring(sep1, sep2)
     return s
 end
 
-
-
-
-
+--  _ _  _ ___ ____ ____ _  _ ____ _
+--  | |\ |  |  |___ |__/ |  | |__| |
+--  | | \|  |  |___ |  \  \/  |  | |___
+--
 
 Interval = { }
 
