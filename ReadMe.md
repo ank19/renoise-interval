@@ -56,7 +56,7 @@ first screenshot from renoise(tm) below. The selection itself does not affect wh
 are considered for the analysis. The position of the edit cursor is taken as reference.
 The selection is only for illustrative purposes.
 
-![Screenshot0](images/Screenshot0.png)
+<img src='images/Screenshot0.png' width='330'>
 
 If you start the tool e.g. from the editor position in line 38, the display will be as shown
 in the second screenshot. It is highly recommended to assign a keyboard shortcut to the
