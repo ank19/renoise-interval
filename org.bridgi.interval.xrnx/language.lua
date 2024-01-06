@@ -328,4 +328,15 @@ function update_interface(vb, settings, data)
     end
     local cache = {}
     update_interval(vb, data, settings, cache)
+    -- Disable irrelevant controls for pure intervals
+    if settings.tuning.value == 1 then
+        get_view(vb, ID_SETTINGS_PITCH_VALUE            ).active = false
+        get_view(vb, ID_SETTINGS_HEARING_THRESHOLD_VALUE).active = false
+        get_view(vb, ID_SETTINGS_TUNING_NOTE            ).active = false
+
+    else
+        get_view(vb, ID_SETTINGS_PITCH_VALUE            ).active = true
+        get_view(vb, ID_SETTINGS_HEARING_THRESHOLD_VALUE).active = true
+        get_view(vb, ID_SETTINGS_TUNING_NOTE            ).active = true
+    end
 end

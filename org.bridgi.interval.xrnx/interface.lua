@@ -124,12 +124,14 @@ function configuration_section(vb, settings, calculation_results)
 
             },
             vb:space  { width    = 10 },
-            vb:rotary { min      =  0.004,
+            vb:rotary { id       = ID_SETTINGS_HEARING_THRESHOLD_VALUE,
+                        min      =  0.004,
                         max      =  0.015,
                         default  =  0.004,
                         width    =  2 * DEFAULT_CONTROL_HEIGHT,
                         height   =  2 * DEFAULT_CONTROL_HEIGHT,
                         bind     = settings.hearing_threshold,
+                        active   = true,
                         notifier = function(value)
                                        update_interface(vb, settings, calculation_results)
                                    end },
@@ -157,7 +159,8 @@ function configuration_section(vb, settings, calculation_results)
             vb:space  { width = 5 },
             vb:column { vb:text       { id      = ID_SETTINGS_PITCH,
                                         text    = "???" },
-                        vb:valuebox   { min     =  400.00,
+                        vb:valuebox   { id      = ID_SETTINGS_PITCH_VALUE,
+                                        min     =  400.00,
                                         max     =  470.00,
                                         active  = true,
                                         bind    = settings.pitch,
