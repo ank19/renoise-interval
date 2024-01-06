@@ -423,7 +423,7 @@ function create_condensed_view(song, lines_of_interest)
     local notes        = {}
     local complete     = true
     -- Create note matrix for calculating intervals first
-    for i, _, v in ordered_line_pairs(lines_of_interest) do
+    for i, p, v in ordered_line_pairs(lines_of_interest) do
         notes[i] = {}
         local j = 0
         for k = 0, settings.tracks.value - 1 do
@@ -431,13 +431,15 @@ function create_condensed_view(song, lines_of_interest)
                 if not measures[song.selected_track_index + k].columns[column].is_empty then
                     j = j + 1
                     local note = v.lines[k + song.selected_track_index].note_columns[column]
-                    notes[i][j] = { column = column,
-                                    track  = song.selected_track_index + k,
-                                    delta  = v.delta,
-                                    line   = v.lines[song.selected_track_index + k],
-                                    string = note.note_string,
-                                    value  = note.note_value,
-                                    volume = safe_volume(note.volume_value) }
+                    notes[i][j] = { column         = column,
+                                    delta          = v.delta,
+                                    track          = song.selected_track_index + k,
+                                    sequence_index = p.sequence,
+                                    line_index     = p.line,
+                                    line           = v.lines[song.selected_track_index + k],
+                                    string         = note.note_string,
+                                    value          = note.note_value,
+                                    volume         = safe_volume(note.volume_value) }
                     -- Check if there are lines in between which were left out
                     if v.in_between then
                         for _, b in ipairs(v.in_between) do

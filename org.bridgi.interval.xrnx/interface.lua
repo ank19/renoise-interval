@@ -10,6 +10,7 @@ local DEFAULT_DIALOG_BUTTON_HEIGHT = renoise.ViewBuilder.DEFAULT_DIALOG_BUTTON_H
 local DEFAULT_MINI_CONTROL_HEIGHT  = renoise.ViewBuilder.DEFAULT_MINI_CONTROL_HEIGHT
 
 local SEPARATOR_WIDTH = 10
+local INDEX_WIDTH     = 40
 local ELEMENT_HEIGHT  = 20
 
 function configuration_section(vb, settings, data)
@@ -202,11 +203,15 @@ function table_header(vb, data, per_column_width, display_chords, dialog_type)
     local note_count = data.note_count
     local head_aligner = vb:horizontal_aligner { width = note_count * 40,
                                                  mode  = "distribute" }
-    local head_row = vb:row { width = note_count * 40,
-                              head_aligner }
+    local head_row = vb:row { width = note_count * 40, head_aligner }
+    head_aligner:add_child( vb:column { vb:button { width  = INDEX_WIDTH,
+                                                    height = ELEMENT_HEIGHT,
+                                                    active = false,
+                                                    color  = COLOR_DEFAULT,
+                                                    text   = "/" }})
     for i = 1, note_count do
         local column = vb:column { width = per_column_width }
-        local header = tostring(data.notes[1][i].track).."."..tostring(data.notes[1][i].column)
+        local header = tostring(data.notes[1][i].track).."|"..tostring(data.notes[1][i].column)
         column:add_child(vb:row { style = "body",
                                   vb:horizontal_aligner { mode  = "center",
                                                           width = per_column_width,
@@ -319,6 +324,21 @@ function create_dialog(vb, settings, data, dialog_type)
     for y = 1, row_count do
         local aligner = vb:horizontal_aligner { width = per_column_width, mode  = "distribute" }
         local row     = vb:row                { width = per_column_width, aligner }
+        if view[y][1].type == "note" then
+            local note = view[y][1].note
+            local index = tostring(note.sequence_index - 1).."|"..tostring(note.line_index - 1)
+            aligner:add_child( vb:column { vb:button { width  = INDEX_WIDTH,
+                                                       height = ELEMENT_HEIGHT,
+                                                       active = false,
+                                                       color  = COLOR_IS_NOTE_MARKER,
+                                                       text   = dialog_type == 1 and "\n"..index.."\n" or index }})
+        else
+            aligner:add_child( vb:column { vb:button { width  = INDEX_WIDTH,
+                                                       height = ELEMENT_HEIGHT,
+                                                       active = false,
+                                                       color  = COLOR_DEFAULT,
+                                                       text   = dialog_type == 1 and "\n-\n" or "-" }})
+        end
         for x = 1, column_count do
             local column = vb:column { width = per_column_width }
             local element = view[y][x]
@@ -340,7 +360,7 @@ function create_dialog(vb, settings, data, dialog_type)
         dialog_content:add_child(row)
     end
     -- Add a status bars
-    local bar_width = math.min(FULL_HD_WIDTH, total_width) - (display_chords and 0 or SEPARATOR_WIDTH + 2)
+    local bar_width = math.min(FULL_HD_WIDTH, total_width) - (display_chords and 0 or SEPARATOR_WIDTH + 2) + INDEX_WIDTH
     if data.status then
         dialog_content:add_child(vb:row { width = bar_width,
                                           vb:button { width  = bar_width,
