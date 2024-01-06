@@ -149,9 +149,13 @@ settings_pitch = {}
 settings_pitch["de"] = "Kammerton a' (A4)"
 settings_pitch["en"] = "Diaspon a' (A4)"
 
+settings_tracks = {}
+settings_tracks["de"] = "Spuren*"
+settings_tracks["en"] = "Tracks*"
+
 settings_reopen_note = {}
-settings_reopen_note["de"] = "*=Fenster muss neu geöffnet werden"
-settings_reopen_note["en"] = "*=Window must be re-opened"
+settings_reopen_note["de"] = "*=Fenster muss\n neu geöffnet werden"
+settings_reopen_note["en"] = "*=Window must\n be re-opened"
 
 status_texts = {}
 status_texts[STATUS_OK] = {}
@@ -240,11 +244,19 @@ local function cents_text(properties)
     return properties.cents and string.format("%.0f\nCents", properties.cents) or "\n---\n"
 end
 
+local function chords_displayed(vb, data, settings)
+    return data.status ~= STATUS_LINES_OMITTED
+           and
+           settings.chord_calculation.value
+           and
+           vb.views[ID_HEADER_CHORD_ACTUAL] -- Takes into account that the window has to be re-opened for these view elements
+end
+
 local function update_interval(vb, data, settings, cache)
     local language       = settings.language.value
     local view_type      = settings.view_type.value
     local view           = data.view
-    local display_chords = data.status ~= STATUS_LINES_OMITTED and settings.chord_calculation.value
+    local display_chords = chords_displayed(vb, data, settings)
     local row_count      = #view
     local column_count   = #view[1] - (display_chords and 0 or 2)
     for row = 1, row_count do
@@ -294,8 +306,11 @@ function update_interface(vb, settings, data)
     end
     update_text    (vb, ID_STATUS_BAR                   , status_text)
     update_text    (vb, ID_COUNTERPOINT_BAR             , counterpoint_text)
-    update_text    (vb, ID_HEADER_CHORD_ACTUAL          , chord_header_actual      [language])
-    update_text    (vb, ID_HEADER_CHORD_LINGER          , chord_header_linger      [language])
+
+    if chords_displayed(vb, data, settings) then
+        update_text(vb, ID_HEADER_CHORD_ACTUAL          , chord_header_actual      [language])
+        update_text(vb, ID_HEADER_CHORD_LINGER          , chord_header_linger      [language])
+    end
     update_text    (vb, ID_SETTINGS_DISSONANCE_THRESHOLD, dissonance_threshold_text[language])
     update_text    (vb, ID_SETTINGS_HEARING_THRESHOLD   , hearing_threshold_texts  [language])
     update_text    (vb, ID_SETTINGS_VOLUME_REDUCTION    , settings_volume_reduction[language])
@@ -303,6 +318,7 @@ function update_interface(vb, settings, data)
     update_text    (vb, ID_SETTINGS_MATRIX_SIZE         , settings_matrix_size     [language])
     update_text    (vb, ID_SETTINGS_SEARCH_ROWS         , settings_search_rows     [language])
     update_text    (vb, ID_SETTINGS_CHORD_CALC          , settings_chord_calc      [language])
+    update_text    (vb, ID_SETTINGS_TRACKS              , settings_tracks          [language])
     update_text    (vb, ID_SETTINGS_REOPEN_NOTE         , settings_reopen_note     [language])
     update_items   (vb, ID_SETTINGS_INTERVAL            , settings_interval        [language])
     update_items   (vb, ID_SETTINGS_TUNING              , settings_tuning          [language])

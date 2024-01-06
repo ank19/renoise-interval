@@ -135,8 +135,20 @@ function position_key(sequence_index, line_index)
     return key
 end
 
+-- Retrieve lines from all tracks of interest
+local function get_lines(song, position)
+    local lines = {}
+    for i = 0, settings.tracks.value - 1 do
+        local track_index   = song.selected_track_index + i
+        local pattern_index = song.sequencer.pattern_sequence[position.sequence]
+        local pattern_track = song.patterns[pattern_index].tracks[track_index]
+        lines[track_index]  = pattern_track.lines[position.line]
+    end
+    return lines
+end
+
 -- Backward search for notes which might be part of an interval considering the current cursor position
-local function look_back(song, lines, track_index, position, column, delta)
+local function look_back(song, lines_seen, track_index, position, column, delta)
     local sequence_index = position.sequence
     local line_index     = position.line - 1
     local pattern_index  = song.sequencer.pattern_sequence[position.sequence]
@@ -151,15 +163,15 @@ local function look_back(song, lines, track_index, position, column, delta)
             line_index = prev_pattern.number_of_lines
         else
             if line_index < 1 or n + delta > settings.max_delta.value then
-                return nil, lines
+                return nil, lines_seen
             end
         end
         local line = pattern_track.lines[line_index]
         if has_note(line, track_index) then
             local key = position_key(sequence_index, line_index)
-            lines[key] = { line = line, delta = n + delta }
+            lines_seen[key] = { lines = get_lines(song, key), delta = n + delta }
             if (column and is_note(line.note_columns[column].note_value)) or not column then
-                return { position = key, line = lines[key] }, lines
+                return { position = key, lines = lines_seen[key] }, lines_seen
             end
         end
         line_index = line_index - 1
@@ -168,7 +180,7 @@ local function look_back(song, lines, track_index, position, column, delta)
 end
 
 -- Forward search for notes which might be part of an interval considering the current cursor position
-local function look_after(song, lines, track_index, position, column, delta)
+local function look_after(song, lines_seen, track_index, position, column, delta)
     local sequence_index = position.sequence
     local line_index     = position.line + 1
     local pattern_index  = song.sequencer.pattern_sequence[position.sequence]
@@ -185,15 +197,15 @@ local function look_after(song, lines, track_index, position, column, delta)
             line_index = 1
         else
             if line_index > lines_count or n + delta > settings.max_delta.value then
-                return nil, lines
+                return nil, lines_seen
             end
         end
         local line = pattern_track.lines[line_index]
         if has_note(line, track_index) then
             local key = position_key(sequence_index, line_index)
-            lines[key] = { line = line, delta = n + delta}
+            lines_seen[key] = { lines = get_lines(song, key), delta = n + delta}
             if (column and is_note(line.note_columns[column].note_value)) or not column then
-                return { position = key, line = lines[key] }, lines
+                return { position = key, lines = lines_seen[key] }, lines_seen
             end
         end
         line_index = line_index + 1
@@ -201,15 +213,15 @@ local function look_after(song, lines, track_index, position, column, delta)
     until false
 end
 
-local function look_current(song, lines, track_index, position, column, delta)
+local function look_current(song, lines_seen, track_index, position, column, delta)
     local pattern_index = song.sequencer.pattern_sequence[position.sequence]
     local pattern_track = song.patterns[pattern_index].tracks[track_index]
-    local line = pattern_track.lines[position.line]
+    local line          = pattern_track.lines[position.line]
     if is_note(line.note_columns[column].note_value) then
-        lines[position] = { line = line, delta = 0 }
-        return { position = position, line = lines[position] }, lines
+        lines_seen[position] = { lines = get_lines(song, position), delta = 0 }
+        return { position = position, lines = lines_seen[position] }, lines_seen
     else
-        return nil, lines
+        return nil, lines_seen
     end
 end
 
@@ -239,11 +251,11 @@ end
 
 -- Get some details about what the search yielded so far
 -- Basically used to check if a few lines of notes were missed in between, as first priority is to lookup intervals
-function line_statistics(tbl)
+function line_statistics(lines_of_interest)
     local count = 0
     local first = position_key(math.huge, math.huge)
     local last  = position_key(-math.huge,-math.huge)
-    for k, _ in pairs(tbl) do
+    for k, _ in pairs(lines_of_interest) do
         count = count + 1
         if is_before_line(k, first) then first = k end
         if is_after_line (k, last ) then last  = k end
@@ -251,42 +263,64 @@ function line_statistics(tbl)
     return count, first, last
 end
 
+-- Get measures
+function line_measures(song, lines_of_interest)
+    local measures = {}
+    for i = 0, settings.tracks.value - 1 do
+        local track_index   = i + song.selected_track_index
+        local column_count  = get_visible_columns(track_index)
+        local columns       = {}
+        local empty_column_count = 0
+        for j = 1, column_count do
+            local n = 0
+            for _, _, v in ordered_line_pairs(lines_of_interest) do
+                local note_column = v.lines[track_index].note_columns[j]
+                if is_note(note_column.note_value) then
+                    n = n + 1
+                end
+            end
+            local is_empty = n == 0
+            columns[j] = { is_empty = is_empty, covered = n > 1, track_index = track_index }
+            if is_empty then empty_column_count = empty_column_count + 1 end
+        end
+        measures[track_index] = { column_count       = column_count,
+                                  columns            = columns,
+                                  track_index        = track_index,
+                                  empty_column_count = empty_column_count }
+    end
+    return measures
+end
+
 -- Find lines of notes which make up the interval, eventually find more lines of notes, if there is still space
 -- left (determined by a configuration property which indicates the maximum number of lines to be displayed)
 function find_lines_of_interest(song, track_index, position)
-    local column_count      = get_visible_columns(track_index)
     local lines_of_interest = {}
     local lines_seen        = {}
     local a, b, c
-    -- Helper function to check whether the specified column is already covered by a previous search
-    local function column_covered(tbl, i)
-        local count = 0
-        for _, v in pairs(tbl) do
-            if is_note(v.line.note_columns[i].note_value) then
-                count = count + 1
-            end
-        end
-        return count > 1
-    end
     -- Helper function to check whether the maximum number of lines to be displayed is already reached
     local function max_lines_reached()
         return count_keys(lines_of_interest) >= settings.max_lines.value
     end
     -- Make sure that for each note in a column at least one interval is found if any
     -- This might result in "missing" lines, which is favoured to get a more compact representation
-    for i = 0, 0 do -- TODO: Settings
+    for i = 0, settings.tracks.value - 1 do
+        local column_count = get_visible_columns(track_index + i)
         for j = 1, column_count do
-            if not column_covered(lines_of_interest, j) then
-                --local pattern_index = song.sequencer.pattern_sequence[position.sequence]
-                --local pattern_track = song.patterns[pattern_index].tracks[track_index]
+            local measures = line_measures(song, lines_of_interest)
+            local track_measures = measures[track_index + i]
+            local column_measures = track_measures.columns[j]
+            if not column_measures then
+                renoise.app():show_message("Cannot get column "..j.." for track "..i..": "..dump(track_measures))
+            end
+            if not column_measures.covered then
                 c, lines_seen = look_current(song, lines_seen, track_index + i, position, j)
                 b, lines_seen = look_back   (song, lines_seen, track_index + i, position, j)
                 a, lines_seen = look_after  (song, lines_seen, track_index + i, position, j)
-                if c and (b or a) then lines_of_interest[c.position] = c.line end
+                if c and (b or a) then lines_of_interest[c.position] = c.lines end
                 if max_lines_reached() then break end
-                if b and (c or a) then lines_of_interest[b.position] = b.line end
+                if b and (c or a) then lines_of_interest[b.position] = b.lines end
                 if max_lines_reached() then break end
-                if a and (b or c) then lines_of_interest[a.position] = a.line end
+                if a and (b or c) then lines_of_interest[a.position] = a.lines end
                 if max_lines_reached() then break end
             end
         end
@@ -295,21 +329,31 @@ function find_lines_of_interest(song, track_index, position)
     local flag = false
     local delta_a = 0
     local delta_b = 0
-    b = { position = position, line = nil }
-    a = { position = position, line = nil }
+    b = { position = position, lines = nil }
+    a = { position = position, lines = nil }
     repeat
         if max_lines_reached() then break end
         -- Alternate backward and forward search
         if not flag then
             if b then
-                b, lines_seen = look_back(song, lines_seen, track_index, b.position, nil, delta_b)
-                if b then lines_of_interest[b.position] = b.line; delta_b = b.line.delta end
+                for i = 0, settings.tracks.value - 1 do
+                    if b then
+                        b, lines_seen = look_back(song, lines_seen, track_index + i, b.position, nil, delta_b)
+                    end
+                    if b then break end
+                end
+                if b then lines_of_interest[b.position] = b.lines; delta_b = b.lines.delta end
             end
             flag = true
         elseif flag then
             if a then
-                a, lines_seen = look_after(song, lines_seen, track_index, a.position, nil, delta_a)
-                if a then lines_of_interest[a.position] = a.line; delta_a = a.line.delta end
+                for i = 0, settings.tracks.value - 1 do
+                    if a then
+                        a, lines_seen = look_after(song, lines_seen, track_index + i, a.position, nil, delta_a)
+                    end
+                    if a then break end
+                end
+                if a then lines_of_interest[a.position] = a.lines; delta_a = a.lines.delta end
             end
             flag = false
         end
@@ -333,58 +377,39 @@ function find_lines_of_interest(song, track_index, position)
     return lines_of_interest
 end
 
--- Check for empty columns in order to optimize UI
-function empty_columns(lines_of_interest, column_count)
-    local column_empty  = {}
-    local empty_column_count = 0
-    for column = 1, column_count do
-        local empty = true
-        for _, _, v in ordered_line_pairs(lines_of_interest) do
-            local note_column = v.line.note_columns[column]
-            if is_note(note_column.note_value) then
-                empty = false
-            end
-        end
-        column_empty[column] = empty
-        if empty then empty_column_count = empty_column_count + 1 end
-    end
-    return empty_column_count, column_empty
-end
-
 --  ___  _  _ _ _    ___     _  _ ____ ___ ____ _ _  _
 --  |__] |  | | |    |  \    |\/| |__|  |  |__/ |  \/
 --  |__] |__| | |___ |__/    |  | |  |  |  |  \ | _/\_
 
 -- Initial creation of a condensed view
-function create_condensed_view(lines_of_interest, track_index)
-    local column_count = get_visible_columns(track_index)
-    local empty_column_count, column_empty = empty_columns(lines_of_interest, column_count)
-    local min_delta = math.huge
-    local notes = {}
-    local complete = true
+function create_condensed_view(song, lines_of_interest)
+    local measures     = line_measures(song, lines_of_interest)
+    local min_delta    = math.huge
+    local notes        = {}
+    local complete     = true
     -- Create note matrix for calculating intervals first
     for i, _, v in ordered_line_pairs(lines_of_interest) do
         notes[i] = {}
         local j = 0
-        for column = 1, column_count do
-            if not column_empty[column] then
-                j = j + 1
-                local note = v.line.note_columns[column]
-                notes[i][j] = {
-                    column = j,
-                    row = i,
-                    delta = v.delta,
-                    line = v.line,
-                    string = note.note_string,
-                    value = note.note_value,
-                    volume = safe_volume(note.volume_value)
-                }
-                -- Check if there are lines in between which were left out
-                for _, b in ipairs(v.in_between) do
-                    if is_note(b.note_columns[column].note_value) then
-                        notes[i][j].gaps = true
-                        -- Memorize if there's at least one skipped note
-                        complete = false
+        for k = 0, settings.tracks.value - 1 do
+            for column = 1, measures[song.selected_track_index + k].column_count do
+                if not measures[song.selected_track_index + k].columns[column].is_empty then
+                    j = j + 1
+                    local note = v.lines[k + song.selected_track_index].note_columns[column]
+                    notes[i][j] = { column = column,
+                                    track  = song.selected_track_index + k,
+                                    delta  = v.delta,
+                                    line   = v.lines[song.selected_track_index + k],
+                                    string = note.note_string,
+                                    value  = note.note_value,
+                                    volume = safe_volume(note.volume_value) }
+                    -- Check if there are lines in between which were left out
+                    for _, b in ipairs(v.in_between) do
+                        if is_note(b.note_columns[column].note_value) then
+                            notes[i][j].gaps = true
+                            -- Memorize if there's at least one skipped note
+                            complete = false
+                        end
                     end
                 end
             end
@@ -430,7 +455,13 @@ function create_condensed_view(lines_of_interest, track_index)
             view[row * 2][#notes[row] * 2 + 1] = { type = "text", text = notes[row][1].delta }
         end
     end
-    return { no_of_note_columns = column_count - empty_column_count, view = view, notes = notes, complete = complete }
+    return { measures   = measures,
+             view       = view,
+             notes      = notes,
+             note_count = #notes[1],
+             complete   = complete,
+             status     = complete and { status = STATUS_OK           , color = COLOR_DEFAULT        }
+                                    or { status = STATUS_LINES_OMITTED, color = COLOR_STATUS_WARNING }}
 end
 
 -- Calculate intervals between successive notes
@@ -550,7 +581,6 @@ function check_counterpoint(data)
     end
     local notes = data.notes
     local row_count = #notes
-    local column_count = data.no_of_note_columns
     local fifths  = {}
     local fourths = {}
     local octaves = {}
@@ -559,7 +589,7 @@ function check_counterpoint(data)
         local has_fifth  = false
         local has_fourth = false
         local has_octave = false
-        for column = 1, column_count do
+        for column = 1, #notes[row] do
             local t = notes[row][column].vertical
             if type(t) == 'table' then
                 if t.interval ==  5 then has_fourth = true end
@@ -583,6 +613,7 @@ function check_counterpoint(data)
     else
         data.counterpoint = {}
     end
+    return data
 end
 
 --  _  _ ____ _ _  _
@@ -614,13 +645,12 @@ function calculate_intervals()
     end
 
     -- Create condensed view and check for some counterpoint violations
-    local data = create_condensed_view(lines, track_index)
-    check_counterpoint(data)
-
-    -- Indicate if the view omits lines
-    if data.complete then data.status = { status = STATUS_OK           , color = COLOR_DEFAULT }
-    else                  data.status = { status = STATUS_LINES_OMITTED, color = COLOR_STATUS_WARNING }
+    local data = create_condensed_view(song, lines, track_index)
+    if data.note_count > 12 then
+        renoise.app():show_message("Warning: High no. of columns ("..data.note_count..") - "
+                                 .."depended on your scaling setting and display size the view might be distorted")
     end
+    data = check_counterpoint(data)
 
     -- Create actual dialog and perform initial update of view elements
     local vb             = renoise.ViewBuilder()

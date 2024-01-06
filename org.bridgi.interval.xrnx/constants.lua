@@ -124,6 +124,7 @@ ID_COUNTERPOINT_BAR              = "counterpoint_bar"
 ID_SETTINGS_CHORD_CALC           = "chord_calculation"
 ID_SETTINGS_CHORD_CALC_BOX       = "chord_calculation_box"
 ID_SETTINGS_REOPEN_NOTE          = "reopen_note"
+ID_SETTINGS_TRACKS               = "tracks"
 
 --   _______ _______ _______ _______ _     _ _______
 --   |______    |    |_____|    |    |     | |______

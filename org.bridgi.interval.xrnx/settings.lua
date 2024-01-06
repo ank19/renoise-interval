@@ -15,5 +15,6 @@ settings = renoise.Document.create("IntervalCalculatorSettings") {
     tuning_note            =   3,
     pitch                  = 440,
     volume_reduction       =   0.20,
+    tracks                 =   2,
     chord_calculation      = true
 }

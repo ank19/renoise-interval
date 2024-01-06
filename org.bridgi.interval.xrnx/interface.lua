@@ -51,12 +51,12 @@ function configuration_section(vb, settings, calculation_results)
             vb:text   { id       = ID_SETTINGS_CHORD_CALC,
                         width    = 20,
                         text    = "???" },
-            vb:checkbox{ id       = ID_SETTINGS_CHORD_CALC_BOX,
-                         bind     = settings.chord_calculation,
-                         width    = 15,
-                         notifier = function(new_index)
-                             update_interface(vb, settings, calculation_results)
-                         end },
+            vb:checkbox { id       = ID_SETTINGS_CHORD_CALC_BOX,
+                          bind     = settings.chord_calculation,
+                          width    = 15,
+                          notifier = function(new_index)
+                              update_interface(vb, settings, calculation_results)
+                          end },
             }},
             vb:space  { width    = 20 },
             vb:rotary { min      =  1.0,
@@ -154,7 +154,7 @@ function configuration_section(vb, settings, calculation_results)
                                         active  = false,
                                         bind    = settings.volume_reduction }
             },
-            vb:space  { width = 10 },
+            vb:space  { width = 5 },
             vb:column { vb:text       { id      = ID_SETTINGS_PITCH,
                                         text    = "???" },
                         vb:valuebox   { min     =  400.00,
@@ -165,14 +165,14 @@ function configuration_section(vb, settings, calculation_results)
                                             update_interface(vb, settings, calculation_results)
                                         end }
             },
-            vb:space  { width = 10 },
+            vb:space  { width = 5 },
             vb:column { vb:text       { id      = ID_SETTINGS_MATRIX_SIZE,
                                         text    = "???" },
                         vb:valuebox   { min     =  3,
                                         max     = 10,
                                         active  = true,
                                         bind    = settings.max_lines } },
-            vb:space  { width = 10 },
+            vb:space  { width = 5 },
             vb:column { vb:text       { id      = ID_SETTINGS_SEARCH_ROWS,
                                         text    = "???" },
                         vb:valuebox   { min     =   1,
@@ -180,19 +180,29 @@ function configuration_section(vb, settings, calculation_results)
                                         active  = true,
                                         bind    = settings.max_delta },
             },
-            vb:space  { width = 10 },
+            vb:space  { width = 5 },
+            vb:column { vb:text       { id      = ID_SETTINGS_TRACKS,
+                                        text    = "???" },
+                        vb:valuebox   { min     =   1,
+                                        max     =  24,
+                                        active  = true,
+                                        bind    = settings.tracks },
+            },
+            vb:space  { width = 5 },
             vb:column { vb:text       { id      = ID_SETTINGS_REOPEN_NOTE,
                                         text    = "???" }}
         }
 end
 
-function table_header(vb, no_of_note_columns, per_column_width, display_chords)
-    local head_aligner = vb:horizontal_aligner { width = no_of_note_columns * 40,
+function table_header(vb, data, per_column_width, display_chords)
+    local note_count = data.note_count
+    local head_aligner = vb:horizontal_aligner { width = note_count * 40,
                                                  mode  = "distribute" }
-    local head_row = vb:row { width = no_of_note_columns * 40,
+    local head_row = vb:row { width = note_count * 40,
                               head_aligner }
-    for columns = 1, no_of_note_columns do
+    for i = 1, note_count do
         local column = vb:column { width = per_column_width }
+        local header = tostring(data.notes[1][i].track).."."..tostring(data.notes[1][i].column)
         column:add_child(vb:row { style = "body",
                                   vb:horizontal_aligner { mode  = "center",
                                                           width = per_column_width,
@@ -200,9 +210,9 @@ function table_header(vb, no_of_note_columns, per_column_width, display_chords)
                                                                       height = HEADER_HEIGHT,
                                                                       color  = COLOR_HEADER_1,
                                                                       active = false,
-                                                                      text   = tostring(columns)}}})
+                                                                      text   = header }}})
         head_aligner:add_child(column)
-        if columns ~= no_of_note_columns then
+        if i ~= note_count then
             column = vb:column { width = per_column_width }
             column:add_child(vb:row { style = "body",
                                       vb:horizontal_aligner { mode  = "center",
@@ -211,7 +221,7 @@ function table_header(vb, no_of_note_columns, per_column_width, display_chords)
                                                                           height = HEADER_HEIGHT,
                                                                           color  = COLOR_HEADER_2,
                                                                           active = false,
-                                                                          text   = "---"}}})
+                                                                          text   = "Interval" }}})
             head_aligner:add_child(column)
         end
     end
@@ -261,11 +271,7 @@ function note_button(vb, per_column_width, element, row, col)
                                                             active = false,
                                                             text   = "\n---\n" }}}
     else
-        local note_text = "\n"
-                          .. note.string
-                          .." ("
-                          ..tostring(note.volume)
-                          ..")\n"
+        local note_text = "\n"..note.string.." ("..tostring(note.volume)..")\n"
         return vb:row { style = "plain",
                         vb:horizontal_aligner { mode  = "center",
                                                 width = per_column_width,
@@ -290,20 +296,19 @@ function text_button(vb, per_column_width, element, row, col)
 end
 
 function create_dialog(vb, settings, data)
-    local view               = data.view
-    local display_chords     = data.status ~= STATUS_LINES_OMITTED and settings.chord_calculation.value
-    local row_count          = #view
-    local column_count       = #view[1] - (display_chords and 0 or 2)
-    local base_width         = 1280 - SEPARATOR_WIDTH
-    if column_count > 6 then
-        base_width = base_width * 1.5
-    end
-    local per_column_width   = base_width / column_count
-    local total_width        = column_count * per_column_width + SEPARATOR_WIDTH
-    local configuration_view = configuration_section(vb, settings, data)
-    local matrix_view        = vb:column { width = total_width, margin = CONTENT_MARGIN }
-    local dialog_content     = vb:column { width = total_width, configuration_view, matrix_view }
-    dialog_content:add_child(table_header(vb, data.no_of_note_columns, per_column_width, display_chords))
+    local FULL_HD_WIDTH        = 1920
+    local MAX_EXPECTED_COLUMNS = 24
+    local view                 = data.view
+    local display_chords       = data.status ~= STATUS_LINES_OMITTED and settings.chord_calculation.value
+    local row_count            = #view
+    local column_count         = #view[1] - (display_chords and 0 or 2)
+    local base_width           = math.max(math.min(FULL_HD_WIDTH - SEPARATOR_WIDTH, column_count * FULL_HD_WIDTH / MAX_EXPECTED_COLUMNS), FULL_HD_WIDTH / 1.75)
+    local per_column_width     = base_width / column_count
+    local total_width          = column_count * per_column_width + SEPARATOR_WIDTH
+    local configuration_view   = configuration_section(vb, settings, data)
+    local matrix_view          = vb:column { width = total_width, margin = CONTENT_MARGIN }
+    local dialog_content       = vb:column { width = total_width, configuration_view, matrix_view }
+    dialog_content:add_child(table_header(vb, data, per_column_width, display_chords))
     dialog_content:add_child(vb:row { height = 5, vb:space {}})
     for y = 1, row_count do
         local aligner = vb:horizontal_aligner { width = per_column_width, mode  = "distribute" }
@@ -328,10 +333,11 @@ function create_dialog(vb, settings, data)
         end
         dialog_content:add_child(row)
     end
-    -- Add a status bar
+    -- Add a status bars
+    local bar_width = math.min(FULL_HD_WIDTH, total_width) - (display_chords and 0 or SEPARATOR_WIDTH + 2)
     if data.status then
-        dialog_content:add_child(vb:row { width =  total_width + 2,
-                                          vb:button { width  = total_width + 2,
+        dialog_content:add_child(vb:row { width = bar_width,
+                                          vb:button { width  = bar_width,
                                                       height = DEFAULT_MINI_CONTROL_HEIGHT,
                                                       id     = ID_STATUS_BAR,
                                                       color  = data.status.color,
@@ -340,8 +346,8 @@ function create_dialog(vb, settings, data)
     end
     -- Add a counterpoint bar
     if data.counterpoint then
-        dialog_content:add_child(vb:row { width =  total_width + 2,
-                                          vb:button { width  = total_width + 2,
+        dialog_content:add_child(vb:row { width = bar_width,
+                                          vb:button { width  = bar_width,
                                                       height = DEFAULT_MINI_CONTROL_HEIGHT,
                                                       id     = ID_COUNTERPOINT_BAR,
                                                       color  = COLOR_STATUS_WARNING,
