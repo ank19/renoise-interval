@@ -69,6 +69,9 @@ function Document:create(test)
      },
      volume_reduction = {
          value = 0.20
+     },
+     tracks = {
+         value = 1
      }
  }  end
 end
@@ -535,7 +538,7 @@ local function test_find_lines_of_interest_minimum()
     local line_index = song.transport.edit_pos.line
     local track = song.tracks[track_index]
     local position = position_key(sequence_index, line_index)
-    local lines = find_lines_of_interest(song, track, pattern_track, position)
+    local lines = find_lines_of_interest(song, track_index, position)
     local count, first, last = line_statistics(lines)
 
     assert(count == MAX_LINES, "Expected "..MAX_LINES..", but got "..count.." lines")
@@ -543,7 +546,7 @@ local function test_find_lines_of_interest_minimum()
     assert(last.sequence == 3 and last.line == 3, "Expected last sequence/ line to be 3/3, but got "..dump(last))
     test_log("Successfully verified search for lines of interest (minimum)")
 
-    local view = create_condensed_view(lines, track.visible_note_columns)
+    local view = create_condensed_view(song, lines)
 
     assert_vertical_interval(view.notes, 1  , 1, 1)
     assert_vertical_interval(view.notes, nil, 1, 2)
@@ -704,7 +707,7 @@ local function test_find_lines_of_interest_additional()
     local line_index = song.transport.edit_pos.line
     local track = song.tracks[track_index]
     local position = position_key(sequence_index, line_index)
-    local lines = find_lines_of_interest(song, track, pattern_track, position)
+    local lines = find_lines_of_interest(song, track_index, position)
     local count, first, last = line_statistics(lines)
 
     assert(count == MAX_LINES, "Expected "..MAX_LINES..", but got "..count.." lines")

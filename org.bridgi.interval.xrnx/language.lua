@@ -162,8 +162,8 @@ settings_tracks["de"] = "Spuren*"
 settings_tracks["en"] = "Tracks*"
 
 settings_reopen_note = {}
-settings_reopen_note["de"] = "*=Fenster muss\n neu geöffnet werden"
-settings_reopen_note["en"] = "*=Window must\n be re-opened"
+settings_reopen_note["de"] = "*=Fenster muss neu geöffnet werden"
+settings_reopen_note["en"] = "*=Window must be re-opened"
 
 status_texts = {}
 status_texts[STATUS_OK] = {}

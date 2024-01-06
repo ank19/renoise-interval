@@ -9,14 +9,14 @@ function is_note(note_value)
 end
 
 -- Get number of visible columns for a specific track
-function get_visible_columns(track_index)
-    return renoise.song().tracks[track_index].visible_note_columns
+function get_visible_columns(song, track_index)
+    return song.tracks[track_index].visible_note_columns
 end
 
 -- Check if track's note line contains at least one note
-function has_note(line, track_index)
+function has_note(song, line, track_index)
     local flag = false
-    for column = 1, get_visible_columns(track_index) do
+    for column = 1, get_visible_columns(song, track_index) do
         local note_column = line.note_columns[column]
         if is_note(note_column.note_value) then flag = true end
     end

@@ -174,7 +174,7 @@ local function look_back(song, lines_seen, track_index, position, column, delta,
             end
         end
         local line = pattern_track.lines[line_index]
-        if has_note(line, track_index) or take_all then
+        if has_note(song, line, track_index) or take_all then
             local key = position_key(sequence_index, line_index)
             lines_seen[key] = { lines = get_lines(song, key), delta = n + delta }
             if (column and is_note(line.note_columns[column].note_value)) or not column or take_all then
@@ -211,7 +211,7 @@ local function look_after(song, lines_seen, track_index, position, column, delta
             end
         end
         local line = pattern_track.lines[line_index]
-        if has_note(line, track_index) or take_all then
+        if has_note(song, line, track_index) or take_all then
             local key = position_key(sequence_index, line_index)
             lines_seen[key] = { lines = get_lines(song, key), delta = n + delta}
             if (column and is_note(line.note_columns[column].note_value)) or not column or take_all then
@@ -286,7 +286,7 @@ function line_measures(song, lines_of_interest)
     local measures = {}
     for i = 0, settings.tracks.value - 1 do
         local track_index   = i + song.selected_track_index
-        local column_count  = get_visible_columns(track_index)
+        local column_count  = get_visible_columns(song, track_index)
         local columns       = {}
         local empty_column_count = 0
         for j = 1, column_count do
@@ -355,7 +355,7 @@ function find_lines(song, track_index, position)
     local lines_seen        = {}
     local line
     for i = 0, settings.tracks.value - 1 do
-        local column_count = get_visible_columns(track_index + i)
+        local column_count = get_visible_columns(song, track_index + i)
         for j = 1, column_count do
             line, lines_seen = look_current(song, lines_seen, track_index + i, position, j)
             if line then lines_of_interest[line.position] = line.lines end
@@ -374,7 +374,7 @@ function find_lines_of_interest(song, track_index, position)
     -- Make sure that for each note in a column at least one interval is found if any
     -- This might result in "missing" lines, which is favoured to get a more compact representation
     for i = 0, settings.tracks.value - 1 do
-        local column_count = get_visible_columns(track_index + i)
+        local column_count = get_visible_columns(song, track_index + i)
         for j = 1, column_count do
             local measures = line_measures(song, lines_of_interest)
             local track_measures = measures[track_index + i]
@@ -393,7 +393,7 @@ function find_lines_of_interest(song, track_index, position)
         end
     end
     -- Add additional lines, if there's still space left to display more lines
-    add_lines(song, {}, {}, track_index, position, false)
+    lines_seen, lines_of_interest = add_lines(song, lines_seen, lines_of_interest, track_index, position, false)
     -- Determine how many lines there are in the same range of the lines of interest
     local p
     for i, _, line_of_interest in ordered_line_pairs(lines_of_interest) do
