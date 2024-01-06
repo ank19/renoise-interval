@@ -113,10 +113,14 @@ volume times the damping factor to the power of the number of note lines, which 
 to the distance of the lingering note relative to the actual chord. Furthermore, the pitch
 level (= Kammerton-Frequenz) can be configured.
 
-Lastly, the rightmost section can also be used to optimize the display of the note matrix by
-selecting the maximum number of lines to be displayed as well as the search depth, which
-can be used to limit the search range, which might become handy in case of sparsely
-distributed note lines. Note, that this rightmost section requires reopening the window.
+Lastly, the rightmost section can also be used to optimize the display of the note matrix
+- by selecting the maximum number of lines to be displayed
+- as well as the search depth, which can be used to limit the search range, which might
+  become handy in case of sparsely distributed note lines
+- The number of tracks to be considered
+
+The tool is tested with a 4k resolution and a DPI scaling of 200%. Realistically, with these
+preconditions it should be possible to display up to 12 note columns.
 
 # Acknowledgements
 
@@ -135,7 +139,6 @@ cross-reading this documentation.
 
 - The calculation of consonance value is only an approximation 
 - "OFF" notes are not considered calculating the consonance value for lingering chords
-- Only one track at a time is considered
 - This tool is not intended for professional use - do not use for critical applications
 - No guarantee is given for correctness
 - Specific renoise(tm) effects like pitch level, etc. are not considered

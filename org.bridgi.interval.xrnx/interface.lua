@@ -184,7 +184,7 @@ function configuration_section(vb, settings, calculation_results)
             vb:column { vb:text       { id      = ID_SETTINGS_TRACKS,
                                         text    = "???" },
                         vb:valuebox   { min     =   1,
-                                        max     =  24,
+                                        max     =  12,
                                         active  = true,
                                         bind    = settings.tracks },
             },
