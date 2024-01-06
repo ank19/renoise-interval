@@ -7,11 +7,15 @@ require 'metatables'
 require 'settings'
 require 'tunings'
 
-renoise.tool():add_menu_entry { name   = "Main Menu:Tools:Bridgi:Interval Calculator",
-                                invoke = function() calculate_intervals() end }
+renoise.tool():add_menu_entry { name   = "Main Menu:Tools:Bridgi:Interval Calculator (Condensed view)",
+                                invoke = function() calculate_intervals(1) end }
+renoise.tool():add_menu_entry { name   = "Main Menu:Tools:Bridgi:Interval Calculator (Compact view)",
+                                invoke = function() calculate_intervals(2) end }
 
-renoise.tool():add_keybinding { name   = "Global:Tools:Interval Calculator",
-                                invoke = function() calculate_intervals() end }
+renoise.tool():add_keybinding { name   = "Global:Tools:Interval Calculator (Condensed view)",
+                                invoke = function() calculate_intervals(1) end }
+renoise.tool():add_keybinding { name   = "Global:Tools:Interval Calculator (Compact view)",
+                                invoke = function() calculate_intervals(2) end }
 
 --  ____ ____ _  _ ____ ____ _ ____    _ _  _ ___ ____ ____ _  _ ____ _       ____ _  _ _  _ ____ ___ _ ____ _  _ ____
 --  | __ |___ |\ | |___ |__/ | |       | |\ |  |  |___ |__/ |  | |__| |       |___ |  | |\ | |     |  | |  | |\ | [__
@@ -148,13 +152,16 @@ local function get_lines(song, position)
 end
 
 -- Backward search for notes which might be part of an interval considering the current cursor position
-local function look_back(song, lines_seen, track_index, position, column, delta)
+local function look_back(song, lines_seen, track_index, position, column, delta, take_all)
     local sequence_index = position.sequence
     local line_index     = position.line - 1
     local pattern_index  = song.sequencer.pattern_sequence[position.sequence]
     local pattern_track  = song.patterns[pattern_index].tracks[track_index]
     local n              = 1
     delta = delta and delta or 0
+    if not take_all then
+        take_all = false
+    end
     repeat
         if line_index < 1 and sequence_index - 1 > 0 then
             sequence_index = sequence_index - 1
@@ -167,10 +174,10 @@ local function look_back(song, lines_seen, track_index, position, column, delta)
             end
         end
         local line = pattern_track.lines[line_index]
-        if has_note(line, track_index) then
+        if has_note(line, track_index) or take_all then
             local key = position_key(sequence_index, line_index)
             lines_seen[key] = { lines = get_lines(song, key), delta = n + delta }
-            if (column and is_note(line.note_columns[column].note_value)) or not column then
+            if (column and is_note(line.note_columns[column].note_value)) or not column or take_all then
                 return { position = key, lines = lines_seen[key] }, lines_seen
             end
         end
@@ -180,13 +187,16 @@ local function look_back(song, lines_seen, track_index, position, column, delta)
 end
 
 -- Forward search for notes which might be part of an interval considering the current cursor position
-local function look_after(song, lines_seen, track_index, position, column, delta)
+local function look_after(song, lines_seen, track_index, position, column, delta, take_all)
     local sequence_index = position.sequence
     local line_index     = position.line + 1
     local pattern_index  = song.sequencer.pattern_sequence[position.sequence]
     local pattern_track  = song.patterns[pattern_index].tracks[track_index]
     local n              = 1
     delta = delta and delta or 0
+    if not take_all then
+        take_all = false
+    end
     repeat
         local lines_count     = song.patterns[song.sequencer.pattern_sequence[sequence_index]].number_of_lines
         local sequences_count = table.getn(song.sequencer.pattern_sequence)
@@ -201,10 +211,10 @@ local function look_after(song, lines_seen, track_index, position, column, delta
             end
         end
         local line = pattern_track.lines[line_index]
-        if has_note(line, track_index) then
+        if has_note(line, track_index) or take_all then
             local key = position_key(sequence_index, line_index)
             lines_seen[key] = { lines = get_lines(song, key), delta = n + delta}
-            if (column and is_note(line.note_columns[column].note_value)) or not column then
+            if (column and is_note(line.note_columns[column].note_value)) or not column or take_all then
                 return { position = key, lines = lines_seen[key] }, lines_seen
             end
         end
@@ -213,11 +223,14 @@ local function look_after(song, lines_seen, track_index, position, column, delta
     until false
 end
 
-local function look_current(song, lines_seen, track_index, position, column, delta)
+local function look_current(song, lines_seen, track_index, position, column, delta, take_all)
     local pattern_index = song.sequencer.pattern_sequence[position.sequence]
     local pattern_track = song.patterns[pattern_index].tracks[track_index]
     local line          = pattern_track.lines[position.line]
-    if is_note(line.note_columns[column].note_value) then
+    if not take_all then
+        take_all = false
+    end
+    if is_note(line.note_columns[column].note_value) or take_all then
         lines_seen[position] = { lines = get_lines(song, position), delta = 0 }
         return { position = position, lines = lines_seen[position] }, lines_seen
     else
@@ -247,6 +260,11 @@ local function count_keys(tbl)
     local count = 0
     for _, _ in pairs(tbl) do count = count + 1 end
     return count
+end
+
+-- Helper function to check whether the maximum number of lines to be displayed is already reached
+local function max_lines_reached(lines_of_interest)
+    return count_keys(lines_of_interest) >= settings.max_lines.value
 end
 
 -- Get some details about what the search yielded so far
@@ -291,54 +309,23 @@ function line_measures(song, lines_of_interest)
     return measures
 end
 
--- Find lines of notes which make up the interval, eventually find more lines of notes, if there is still space
--- left (determined by a configuration property which indicates the maximum number of lines to be displayed)
-function find_lines_of_interest(song, track_index, position)
-    local lines_of_interest = {}
-    local lines_seen        = {}
-    local a, b, c
-    -- Helper function to check whether the maximum number of lines to be displayed is already reached
-    local function max_lines_reached()
-        return count_keys(lines_of_interest) >= settings.max_lines.value
-    end
-    -- Make sure that for each note in a column at least one interval is found if any
-    -- This might result in "missing" lines, which is favoured to get a more compact representation
-    for i = 0, settings.tracks.value - 1 do
-        local column_count = get_visible_columns(track_index + i)
-        for j = 1, column_count do
-            local measures = line_measures(song, lines_of_interest)
-            local track_measures = measures[track_index + i]
-            local column_measures = track_measures.columns[j]
-            if not column_measures then
-                renoise.app():show_message("Cannot get column "..j.." for track "..i..": "..dump(track_measures))
-            end
-            if not column_measures.covered then
-                c, lines_seen = look_current(song, lines_seen, track_index + i, position, j)
-                b, lines_seen = look_back   (song, lines_seen, track_index + i, position, j)
-                a, lines_seen = look_after  (song, lines_seen, track_index + i, position, j)
-                if c and (b or a) then lines_of_interest[c.position] = c.lines end
-                if max_lines_reached() then break end
-                if b and (c or a) then lines_of_interest[b.position] = b.lines end
-                if max_lines_reached() then break end
-                if a and (b or c) then lines_of_interest[a.position] = a.lines end
-                if max_lines_reached() then break end
-            end
-        end
-    end
-    -- Add additional lines, if there's still space left to display more lines
+-- Eventually find more lines of notes, if there is still space left in the view, determined by a configuration property
+-- which indicates the maximum number of lines to be displayed
+function add_lines(song, lines_seen, lines_of_interest, track_index, position, take_all)
+    -- Flag to indicate whether to continue searching backwards or forwards (used for alternating the search direction)
     local flag = false
     local delta_a = 0
     local delta_b = 0
-    b = { position = position, lines = nil }
-    a = { position = position, lines = nil }
+    local a = { position = position, lines = nil }
+    local b = { position = position, lines = nil }
     repeat
-        if max_lines_reached() then break end
+        if max_lines_reached(lines_of_interest) then break end
         -- Alternate backward and forward search
         if not flag then
             if b then
                 for i = 0, settings.tracks.value - 1 do
                     if b then
-                        b, lines_seen = look_back(song, lines_seen, track_index + i, b.position, nil, delta_b)
+                        b, lines_seen = look_back(song, lines_seen, track_index + i, b.position, nil, delta_b, take_all)
                     end
                     if b then break end
                 end
@@ -349,7 +336,7 @@ function find_lines_of_interest(song, track_index, position)
             if a then
                 for i = 0, settings.tracks.value - 1 do
                     if a then
-                        a, lines_seen = look_after(song, lines_seen, track_index + i, a.position, nil, delta_a)
+                        a, lines_seen = look_after(song, lines_seen, track_index + i, a.position, nil, delta_a, take_all)
                     end
                     if a then break end
                 end
@@ -359,6 +346,54 @@ function find_lines_of_interest(song, track_index, position)
         end
         if not b and not a then break end
     until false
+    return lines_seen, lines_of_interest
+end
+
+-- Find lines of notes, just based on the view size and search settings
+function find_lines(song, track_index, position)
+    local lines_of_interest = {}
+    local lines_seen        = {}
+    local line
+    for i = 0, settings.tracks.value - 1 do
+        local column_count = get_visible_columns(track_index + i)
+        for j = 1, column_count do
+            line, lines_seen = look_current(song, lines_seen, track_index + i, position, j)
+            if line then lines_of_interest[line.position] = line.lines end
+            if max_lines_reached(lines_of_interest) then break end
+        end
+    end
+    lines_seen, lines_of_interest = add_lines(song, lines_seen, lines_of_interest, track_index, position, true)
+    return lines_of_interest
+end
+
+-- Find lines of notes, prioritize finding intervals over displaying all available lines
+function find_lines_of_interest(song, track_index, position)
+    local lines_of_interest = {}
+    local lines_seen        = {}
+    local a, b, c
+    -- Make sure that for each note in a column at least one interval is found if any
+    -- This might result in "missing" lines, which is favoured to get a more compact representation
+    for i = 0, settings.tracks.value - 1 do
+        local column_count = get_visible_columns(track_index + i)
+        for j = 1, column_count do
+            local measures = line_measures(song, lines_of_interest)
+            local track_measures = measures[track_index + i]
+            local column_measures = track_measures.columns[j]
+            if not column_measures.covered then
+                c, lines_seen = look_current(song, lines_seen, track_index + i, position, j)
+                b, lines_seen = look_back   (song, lines_seen, track_index + i, position, j)
+                a, lines_seen = look_after  (song, lines_seen, track_index + i, position, j)
+                if c and (b or a) then lines_of_interest[c.position] = c.lines end
+                if max_lines_reached(lines_of_interest) then break end
+                if b and (c or a) then lines_of_interest[b.position] = b.lines end
+                if max_lines_reached(lines_of_interest) then break end
+                if a and (b or c) then lines_of_interest[a.position] = a.lines end
+                if max_lines_reached(lines_of_interest) then break end
+            end
+        end
+    end
+    -- Add additional lines, if there's still space left to display more lines
+    add_lines(song, {}, {}, track_index, position, false)
     -- Determine how many lines there are in the same range of the lines of interest
     local p
     for i, _, line_of_interest in ordered_line_pairs(lines_of_interest) do
@@ -404,11 +439,13 @@ function create_condensed_view(song, lines_of_interest)
                                     value  = note.note_value,
                                     volume = safe_volume(note.volume_value) }
                     -- Check if there are lines in between which were left out
-                    for _, b in ipairs(v.in_between) do
-                        if is_note(b.note_columns[column].note_value) then
-                            notes[i][j].gaps = true
-                            -- Memorize if there's at least one skipped note
-                            complete = false
+                    if v.in_between then
+                        for _, b in ipairs(v.in_between) do
+                            if is_note(b.note_columns[column].note_value) then
+                                notes[i][j].gaps = true
+                                -- Memorize if there's at least one skipped note
+                                complete = false
+                            end
                         end
                     end
                 end
@@ -418,6 +455,9 @@ function create_condensed_view(song, lines_of_interest)
         if v.delta < min_delta then
             min_delta = v.delta
         end
+    end
+    if #notes[1] == 0 then
+        return nil
     end
     -- Mark each row according to the minimum delta
     for row = 1, #notes do
@@ -628,7 +668,7 @@ local function log_marker(text)
     trace_log("-------------------------------------------------")
 end
 
-function calculate_intervals()
+function calculate_intervals(dialog_type)
 
     log_marker("INTERVAL ANALYSIS STARTED")
 
@@ -636,8 +676,13 @@ function calculate_intervals()
     local song        = renoise.song()
     local track_index = song.selected_track_index
     local position    = position_key(song.selected_sequence_index, song.transport.edit_pos.line)
-    local lines       = find_lines_of_interest(song, track_index, position)
-    
+    local lines
+    if dialog_type == 1 then
+        lines = find_lines_of_interest(song, track_index, position)
+    elseif dialog_type == 2 then
+        lines = find_lines(song, track_index, position)
+    end
+
     -- Abort if nothing found to display
     if count_keys(lines) < 2 then
         renoise.app():show_message("Not enough notes found - at least two rows in search range required")
@@ -646,15 +691,16 @@ function calculate_intervals()
 
     -- Create condensed view and check for some counterpoint violations
     local data = create_condensed_view(song, lines, track_index)
-    if data.note_count > 12 then
-        renoise.app():show_message("Warning: High no. of columns ("..data.note_count..") - "
-                                 .."depended on your scaling setting and display size the view might be distorted")
+    if not data then
+        renoise.app():show_message("No columns to display found (empty?)")
+        return
     end
     data = check_counterpoint(data)
+    data.dialog_type = dialog_type
 
     -- Create actual dialog and perform initial update of view elements
     local vb             = renoise.ViewBuilder()
-    local dialog_content = create_dialog(vb, settings, data)
+    local dialog_content = create_dialog(vb, settings, data, dialog_type)
     renoise.app():show_custom_dialog("Interval Analysis", dialog_content)
     update_interface(vb, settings, data)
 

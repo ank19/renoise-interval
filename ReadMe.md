@@ -22,14 +22,6 @@ is available and will be indicated in the status bar at the bottom of the analys
 - Consecutive octaves
 - Fifth - fourth - fifth 
 
-Pls. note that the note matrix used to display these features is optimized in a way, that
-note lines forming intervals are prioritized, which means, that there might be note lines
-left out in favor of other note lines which are more important, as they form intervals.
-
-If note lines are left out, a status bar will indicate this fact. Not all features are
-available, if note lines are left out. The calculation of lingering chord consonance values
-is not performed. Also, the detection of invalid counterpoint patterns is disabled.
-
 ## Consonance Value
 
 Roughly explained, the consonance value is an **approximation** to the expected level of
@@ -96,6 +88,16 @@ calculating the ratios.
 The pure interval tuning is not a tuning, of course, and does not take anything into
 account, no pitch, no tuning note, no hearing threshold. 
 
+## Views
+
+| View      | Purpose  | Lines might be omitted                                          | Limitations                                                                    | Approximate max. size (4k, 200% scaling) |
+|-----------|----------|-----------------------------------------------------------------|--------------------------------------------------------------------------------|------------------------------------------|
+| Condensed | Excerpt  | Yes (prioritizing having at least one interval for each column) | If lines omitted: Counterpoint, effect display, lingering chords not available | 12 note columns x 8 rows                 |
+| Compact   | Overview | No                                                              | None                                                                           | 24 note columns x 24 rows                |
+
+As I have no idea how to get either the scaling factor or the current window size and it's not possible to set relative
+sizes on top elements, the hard-coded sizes are best-effort estimations. If you experience issues, pls. let me know. 
+
 ## Settings
 
 The fist setting is the type of the view, representing the different features outline
@@ -139,8 +141,7 @@ cross-reading this documentation.
 
 - The calculation of consonance value is only an approximation 
 - "OFF" notes are not considered calculating the consonance value for lingering chords
-- This tool is not intended for professional use - do not use for critical applications
-- No guarantee is given for correctness
+- No guarantee is given for correctness (not intended for professional/ critical use)
 - Specific renoise(tm) effects like pitch level, etc. are not considered
 
 # Download

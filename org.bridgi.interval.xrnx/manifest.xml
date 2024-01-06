@@ -2,7 +2,7 @@
 <RenoiseScriptingTool doc_version="0">
   <ApiVersion>6</ApiVersion>
   <Id>org.bridgi.interval</Id>
-  <Version>0.02</Version>
+  <Version>0.1.0</Version>
   <Author>Andreas</Author>
   <Name>Interval Analysis</Name>
   <Category>Tool Development</Category>

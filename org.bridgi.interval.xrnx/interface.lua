@@ -9,9 +9,10 @@ local DEFAULT_CONTROL_HEIGHT       = renoise.ViewBuilder.DEFAULT_CONTROL_HEIGHT
 local DEFAULT_DIALOG_BUTTON_HEIGHT = renoise.ViewBuilder.DEFAULT_DIALOG_BUTTON_HEIGHT
 local DEFAULT_MINI_CONTROL_HEIGHT  = renoise.ViewBuilder.DEFAULT_MINI_CONTROL_HEIGHT
 
-local SEPARATOR_WIDTH              = 10
+local SEPARATOR_WIDTH = 10
+local ELEMENT_HEIGHT  = 20
 
-function configuration_section(vb, settings, calculation_results)
+function configuration_section(vb, settings, data)
     return vb:row { vb:column { vb:row {
                 vb:space  { width    = 5 },
                 vb:switch { id       = ID_SETTINGS_INTERVAL,
@@ -19,7 +20,7 @@ function configuration_section(vb, settings, calculation_results)
                             bind     = settings.view_type,
                             notifier = function(new_index)
                                            settings.view_type.value = new_index
-                                           update_interface(vb, settings, calculation_results)
+                                           update_interface(vb, settings, data)
                                        end } },
         vb:row {
         vb:space  { width    = 5 },
@@ -29,14 +30,14 @@ function configuration_section(vb, settings, calculation_results)
                       bind     = settings.tuning,
                       notifier = function(new_index)
                           settings.tuning.value = new_index
-                          update_interface(vb, settings, calculation_results)
+                          update_interface(vb, settings, data)
                       end }
             },
             vb:popup  { id       = ID_SETTINGS_TUNING_NOTE,
                         width    = 40,
                         bind     = settings.tuning_note,
                         notifier = function(new_index)
-                            update_interface(vb, settings, calculation_results)
+                            update_interface(vb, settings, data)
                         end },
             vb:popup  { id       = "popup_language",
                         items    = {"Deutsch","English"},
@@ -45,7 +46,7 @@ function configuration_section(vb, settings, calculation_results)
                             if new_index == 1 then settings.language.value = "de"
                             else settings.language.value = "en"
                             end
-                            update_interface(vb, settings, calculation_results)
+                            update_interface(vb, settings, data)
                         end },
             vb:space  { width    = 5 },
             vb:text   { id       = ID_SETTINGS_CHORD_CALC,
@@ -55,7 +56,7 @@ function configuration_section(vb, settings, calculation_results)
                           bind     = settings.chord_calculation,
                           width    = 15,
                           notifier = function(new_index)
-                              update_interface(vb, settings, calculation_results)
+                              update_interface(vb, settings, data)
                           end },
             }},
             vb:space  { width    = 20 },
@@ -70,7 +71,7 @@ function configuration_section(vb, settings, calculation_results)
                             if value >= settings.dissonance_threshold_2.value then
                                 settings.dissonance_threshold_1.value = settings.dissonance_threshold_2.value - 0.001
                             end
-                            update_interface(vb, settings, calculation_results)
+                            update_interface(vb, settings, data)
                         end
             },
             vb:rotary { min      =  1.0,
@@ -87,7 +88,7 @@ function configuration_section(vb, settings, calculation_results)
                             if value >= settings.dissonance_threshold_3.value then
                                 settings.dissonance_threshold_2.value = settings.dissonance_threshold_3.value - 0.001
                             end
-                            update_interface(vb, settings, calculation_results)
+                            update_interface(vb, settings, data, dialog_type)
                         end
             },
             vb:rotary { min      =  1.0,
@@ -101,7 +102,7 @@ function configuration_section(vb, settings, calculation_results)
                             if value <= settings.dissonance_threshold_2.value then
                                 settings.dissonance_threshold_3.value = settings.dissonance_threshold_2.value + 0.001
                             end
-                            update_interface(vb, settings, calculation_results)
+                            update_interface(vb, settings, data)
                         end
             },
             vb:column { vb:text                { id      = ID_SETTINGS_DISSONANCE_THRESHOLD,
@@ -133,7 +134,7 @@ function configuration_section(vb, settings, calculation_results)
                         bind     = settings.hearing_threshold,
                         active   = true,
                         notifier = function(value)
-                                       update_interface(vb, settings, calculation_results)
+                                       update_interface(vb, settings, data)
                                    end },
             vb:column { vb:text       { id      = ID_SETTINGS_HEARING_THRESHOLD,
                                         text    = "???" },
@@ -165,14 +166,14 @@ function configuration_section(vb, settings, calculation_results)
                                         active  = true,
                                         bind    = settings.pitch,
                                         notifier = function(value)
-                                            update_interface(vb, settings, calculation_results)
+                                            update_interface(vb, settings, data)
                                         end }
             },
             vb:space  { width = 5 },
             vb:column { vb:text       { id      = ID_SETTINGS_MATRIX_SIZE,
                                         text    = "???" },
                         vb:valuebox   { min     =  3,
-                                        max     = 10,
+                                        max     = 24,
                                         active  = true,
                                         bind    = settings.max_lines } },
             vb:space  { width = 5 },
@@ -197,7 +198,7 @@ function configuration_section(vb, settings, calculation_results)
         }
 end
 
-function table_header(vb, data, per_column_width, display_chords)
+function table_header(vb, data, per_column_width, display_chords, dialog_type)
     local note_count = data.note_count
     local head_aligner = vb:horizontal_aligner { width = note_count * 40,
                                                  mode  = "distribute" }
@@ -224,7 +225,7 @@ function table_header(vb, data, per_column_width, display_chords)
                                                                           height = HEADER_HEIGHT,
                                                                           color  = COLOR_HEADER_2,
                                                                           active = false,
-                                                                          text   = "Interval" }}})
+                                                                          text   = dialog_type == 1 and "Interval" or "I"}}})
             head_aligner:add_child(column)
         end
     end
@@ -250,68 +251,70 @@ function table_header(vb, data, per_column_width, display_chords)
     return head_row
 end
 
-function data_button(vb, per_column_width, element, row, col)
+function data_button(vb, per_column_width, element, row, col, dialog_type)
     return vb:row { vb:horizontal_aligner { mode   = "center",
                                             width  = per_column_width,
                                             margin = 0,
                                             vb:button { id      = ID_ELEMENT..row.."."..col,
                                                         width   = per_column_width,
-                                                        height  = 30,
+                                                        height  = ELEMENT_HEIGHT,
                                                         color   = COLOR_DEFAULT,
                                                         active  = false,
-                                                        text    = "\n---\n" }}}
+                                                        text    = dialog_type == 1 and "\n---\n" or "-" }}}
 end
 
-function note_button(vb, per_column_width, element, row, col)
+function note_button(vb, per_column_width, element, dialog_type)
     local note = element.note
     if not is_note(note.value) then
         return vb:row { style = "body",
                         vb:horizontal_aligner { mode  = "center",
                                                 width = per_column_width,
                                                 vb:button { width  = per_column_width,
-                                                            height = 40,
+                                                            height = ELEMENT_HEIGHT,
                                                             color  = note.marker and COLOR_NO_NOTE_MARKER or COLOR_NO_NOTE,
                                                             active = false,
-                                                            text   = "\n---\n" }}}
+                                                            text   = dialog_type == 1 and "\n---\n" or "-" }}}
     else
-        local note_text = "\n"..note.string.." ("..tostring(note.volume)..")\n"
+        local note_text = dialog_type == 1 and "\n"..note.string.." ("..tostring(note.volume)..")\n" or note.string
         return vb:row { style = "plain",
                         vb:horizontal_aligner { mode  = "center",
                                                 width = per_column_width,
                                                 vb:button { width  = per_column_width,
-                                                            height = 40,
+                                                            height = ELEMENT_HEIGHT,
                                                             color  = note.marker and COLOR_IS_NOTE_MARKER or COLOR_IS_NOTE,
                                                             active = false,
-                                                            text   = note_text}}}
+                                                            text   = note_text }}}
     end
 end
 
-function text_button(vb, per_column_width, element, row, col)
+function text_button(vb, per_column_width, element, dialog_type)
+    local text = dialog_type == 1 and "\n----- "..tostring(element.text).." -----\n" or tostring(element.text)
     return vb:row { style = "body",
                     vb:horizontal_aligner { mode  = "center",
                                             width = per_column_width,
                                             vb:text { width  = per_column_width,
-                                                      height = 50,
+                                                      height = ELEMENT_HEIGHT,
                                                       font   = "italic",
                                                       align  = "center",
                                                       style  = "disabled",
-                                                      text   = "\n----- "..tostring(element.text).." -----\n" }}}
+                                                      text   = text }}}
 end
 
-function create_dialog(vb, settings, data)
+function create_dialog(vb, settings, data, dialog_type)
     local FULL_HD_WIDTH        = 1920
-    local MAX_EXPECTED_COLUMNS = 24
+    local MAX_EXPECTED_COLUMNS = dialog_type == 1 and 24 or 48
+    local reduction_factor     = dialog_type == 1 and 1.75 or 0.6
     local view                 = data.view
     local display_chords       = data.status ~= STATUS_LINES_OMITTED and settings.chord_calculation.value
     local row_count            = #view
     local column_count         = #view[1] - (display_chords and 0 or 2)
-    local base_width           = math.max(math.min(FULL_HD_WIDTH - SEPARATOR_WIDTH, column_count * FULL_HD_WIDTH / MAX_EXPECTED_COLUMNS), FULL_HD_WIDTH / 1.75)
-    local per_column_width     = base_width / column_count
+    local base_width           = math.max(math.min(FULL_HD_WIDTH - SEPARATOR_WIDTH, column_count * FULL_HD_WIDTH / MAX_EXPECTED_COLUMNS), FULL_HD_WIDTH / reduction_factor)
+    local per_column_width     = base_width / column_count / (dialog_type == 1 and 1 or 2)
     local total_width          = column_count * per_column_width + SEPARATOR_WIDTH
     local configuration_view   = configuration_section(vb, settings, data)
     local matrix_view          = vb:column { width = total_width, margin = CONTENT_MARGIN }
     local dialog_content       = vb:column { width = total_width, configuration_view, matrix_view }
-    dialog_content:add_child(table_header(vb, data, per_column_width, display_chords))
+    dialog_content:add_child(table_header(vb, data, per_column_width, display_chords, dialog_type))
     dialog_content:add_child(vb:row { height = 5, vb:space {}})
     for y = 1, row_count do
         local aligner = vb:horizontal_aligner { width = per_column_width, mode  = "distribute" }
@@ -322,14 +325,14 @@ function create_dialog(vb, settings, data)
             if display_chords and x == column_count - 1 then
                 -- Add a small separator between the main matrix and the chord columns
                 aligner:add_child( vb:column { vb:button { width  = SEPARATOR_WIDTH,
-                                                           height = 50,
+                                                           height = ELEMENT_HEIGHT,
                                                            active = false,
                                                            color  = COLOR_BLACK,
-                                                           text   = "\n\n"}})
+                                                           text   = dialog_type == 1 and "\n\n" or "" }})
             end
-            if     element.type == "note" then column:add_child(note_button(vb, per_column_width, element, y, x))
-            elseif element.type == "data" then column:add_child(data_button(vb, per_column_width, element, y, x))
-            elseif element.type == "text" then column:add_child(text_button(vb, per_column_width, element, y, x))
+            if     element.type == "note" then column:add_child(note_button(vb, per_column_width, element, dialog_type))
+            elseif element.type == "data" then column:add_child(data_button(vb, per_column_width, element, y, x, dialog_type))
+            elseif element.type == "text" then column:add_child(text_button(vb, per_column_width, element, dialog_type))
             end
             -- Lilia wanted to know what a comment is, :-)
             aligner:add_child(column)

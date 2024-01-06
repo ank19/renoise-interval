@@ -106,12 +106,20 @@ hearing_threshold_texts["de"] = "Hörschwelle"
 hearing_threshold_texts["en"] = "Audibility"
 
 chord_header_actual = {}
-chord_header_actual["de"] = "Akkord"
-chord_header_actual["en"] = "Chord"
+chord_header_actual["de"] = {}
+chord_header_actual["en"] = {}
+chord_header_actual["de"][1] = "Akkord"
+chord_header_actual["en"][1] = "Chord"
+chord_header_actual["de"][2] = "Ak."
+chord_header_actual["en"][2] = "Ch."
 
 chord_header_linger = {}
-chord_header_linger["de"] = "Nachklang"
-chord_header_linger["en"] = "Lingering"
+chord_header_linger["de"] = {}
+chord_header_linger["en"] = {}
+chord_header_linger["de"][1] = "Nachklang"
+chord_header_linger["en"][1] = "Lingering"
+chord_header_linger["de"][2] = "N."
+chord_header_linger["en"][2] = "L."
 
 settings_header = {}
 settings_header["de"] = "Einstellungen"
@@ -195,7 +203,7 @@ local function update_items(vb, id, items)
     get_view(vb, id).items = items
 end
 
-local function dissonance_details(dissonance, settings)
+local function dissonance_details(dissonance, settings, dialog_type)
     local language = settings.language.value
     if not dissonance then
         return dissonance_omitted_texts[language], COLOR_BLACK
@@ -204,31 +212,36 @@ local function dissonance_details(dissonance, settings)
     if not specific_dissonance then
         return dissonance_omitted_texts[language], COLOR_BLACK
     end
-    local dissonance_thresholds={settings.dissonance_threshold_1.value,
-                                 settings.dissonance_threshold_2.value,
-                                 settings.dissonance_threshold_3.value,
-                                 math.huge}
+    local dissonance_thresholds = { settings.dissonance_threshold_1.value,
+                                    settings.dissonance_threshold_2.value,
+                                    settings.dissonance_threshold_3.value,
+                                    math.huge }
     for i = 1, #dissonance_thresholds do
         if specific_dissonance <= dissonance_thresholds[i] then
-            return dissonance_texts[language][i] .."\n("..string.format("%.2f", specific_dissonance)..")",
-                   DISSONANCE_COLORS[i]
+            if dialog_type == 1 then
+                return dissonance_texts[language][i].."\n("..string.format("%.2f", specific_dissonance)..")", DISSONANCE_COLORS[i]
+            else
+                return string.format("%.0f", specific_dissonance), DISSONANCE_COLORS[i]
+            end
         end
     end
     return nil, COLOR_BLACK
 end
 
-local function interval_text(language, interval)
+local function interval_text(language, interval, dialog_type)
     local function display_interval(delta)
         return (delta >= 13 and delta <= 24) and delta or interval.interval -- Additional intervals Ninth...Fifteenth
     end
     -- local a, b = interval:ab()
-    return interval_texts[language][display_interval(math.abs(interval.halftones), interval.interval) + 1]
-            .."\n("
-            ..tostring(interval.halftones)
-            .." HT)"
+    return dialog_type == 1
+            and interval_texts[language][display_interval(math.abs(interval.halftones), interval.interval) + 1].."\n("..tostring(interval.halftones).." HT)"
+             or tostring(interval.halftones)
 end
 
-local function effect_text(language, interval)
+local function effect_text(language, interval, dialog_type)
+    if dialog_type ~= 1 then
+        return "-", "-"
+    end
     local text = "n/a"
     local octave_text = tostring(interval.octaves).." "..octave_texts[language]
     local has_dedicated_text = interval.octaves == 0 or (interval.octaves == 1 and interval.interval == 12)
@@ -240,8 +253,12 @@ local function effect_text(language, interval)
     return text, octave_text
 end
 
-local function cents_text(properties)
-    return properties.cents and string.format("%.0f\nCents", properties.cents) or "\n---\n"
+local function cents_text(properties, dialog_type)
+    if properties.cents then
+        return dialog_type == 1 and string.format("%.0f\nCents", properties.cents) or string.format("%.0f", properties.cents)
+    else
+        return dialog_type == 1 and "\n---\n" or "-"
+    end
 end
 
 local function chords_displayed(vb, data, settings)
@@ -252,7 +269,7 @@ local function chords_displayed(vb, data, settings)
            vb.views[ID_HEADER_CHORD_ACTUAL] -- Takes into account that the window has to be re-opened for these view elements
 end
 
-local function update_interval(vb, data, settings, cache)
+local function update_interval(vb, data, settings, dialog_type)
     local language       = settings.language.value
     local view_type      = settings.view_type.value
     local view           = data.view
@@ -276,14 +293,14 @@ local function update_interval(vb, data, settings, cache)
                     end
                 end
                 if dissonance then
-                    local dissonance_text, dissonance_color = dissonance_details(dissonance, settings)
-                    if     view_type == 1 or interval.chord then update_text (vb, view_id, dissonance_text)
+                    local dissonance_text, dissonance_color = dissonance_details(dissonance, settings, dialog_type)
+                    if     view_type == 1 or interval.chord then update_text (vb, view_id, dissonance_text )
                                                                  update_color(vb, view_id, dissonance_color)
-                    elseif view_type == 2 then update_text (vb, view_id, interval_text(language, interval))
+                    elseif view_type == 2 then update_text (vb, view_id, interval_text(language, interval, dialog_type))
                                                update_color(vb, view_id, dissonance_color)
-                    elseif view_type == 3 then update_text (vb, view_id, effect_text(language, interval))
+                    elseif view_type == 3 then update_text (vb, view_id, effect_text(language, interval, dialog_type))
                                                update_color(vb, view_id, dissonance_color)
-                    elseif view_type == 4 then update_text (vb, view_id, cents_text(properties))
+                    elseif view_type == 4 then update_text (vb, view_id, cents_text(properties, dialog_type))
                                                update_color(vb, view_id, dissonance_color)
                     end
                 end
@@ -293,6 +310,7 @@ local function update_interval(vb, data, settings, cache)
 end
 
 function update_interface(vb, settings, data)
+    local dialog_type       = data.dialog_type
     local language          = settings.language.value
     local status            = data.status.status
     local status_text       = status_texts[status][language]
@@ -308,8 +326,8 @@ function update_interface(vb, settings, data)
     update_text    (vb, ID_COUNTERPOINT_BAR             , counterpoint_text)
 
     if chords_displayed(vb, data, settings) then
-        update_text(vb, ID_HEADER_CHORD_ACTUAL          , chord_header_actual      [language])
-        update_text(vb, ID_HEADER_CHORD_LINGER          , chord_header_linger      [language])
+        update_text(vb, ID_HEADER_CHORD_ACTUAL          , chord_header_actual      [language][dialog_type])
+        update_text(vb, ID_HEADER_CHORD_LINGER          , chord_header_linger      [language][dialog_type])
     end
     update_text    (vb, ID_SETTINGS_DISSONANCE_THRESHOLD, dissonance_threshold_text[language])
     update_text    (vb, ID_SETTINGS_HEARING_THRESHOLD   , hearing_threshold_texts  [language])
@@ -326,14 +344,12 @@ function update_interface(vb, settings, data)
     if language == "de" then vb.views.popup_language.value = 1
                         else vb.views.popup_language.value = 2
     end
-    local cache = {}
-    update_interval(vb, data, settings, cache)
+    update_interval(vb, data, settings, dialog_type)
     -- Disable irrelevant controls for pure intervals
     if settings.tuning.value == 1 then
         get_view(vb, ID_SETTINGS_PITCH_VALUE            ).active = false
         get_view(vb, ID_SETTINGS_HEARING_THRESHOLD_VALUE).active = false
         get_view(vb, ID_SETTINGS_TUNING_NOTE            ).active = false
-
     else
         get_view(vb, ID_SETTINGS_PITCH_VALUE            ).active = true
         get_view(vb, ID_SETTINGS_HEARING_THRESHOLD_VALUE).active = true
