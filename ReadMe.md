@@ -5,8 +5,8 @@
 
 ## Overview
 
-This plugin for [renoise](https://www.renoise.com)(tm)  
-- calculates of a **consonance value**, as described by Werner Brefeld (see references)
+This plugin for [renoise](https://www.renoise.com)(tm), which is a [music tracker](https://en.wikipedia.org/wiki/Music_tracker),   
+- calculates the **consonance value** as described by Werner Brefeld (see references)
 - determines the **interval** of dyads for up to 24 halftones of the twelve-tone system
 - displays **emotional effects** for intervals between 0 and 12 halftones
 - calculates **cents** for intervals
