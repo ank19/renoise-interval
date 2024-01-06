@@ -121,9 +121,6 @@ Lastly, the rightmost section can also be used to optimize the display of the no
   become handy in case of sparsely distributed note lines
 - The number of tracks to be considered
 
-The tool is tested with a 4k resolution and a DPI scaling of 200%. Realistically, with these
-preconditions it should be possible to display up to 12 note columns.
-
 # Acknowledgements
 
 My special thanks go to Werner Brefeld for his elaboration of the
