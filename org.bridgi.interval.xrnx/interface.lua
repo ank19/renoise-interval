@@ -16,196 +16,192 @@ local FULL_HD_WIDTH   = 1920
 local SETTINGS_WIDTH  = 50
 
 function configuration_section(vb, settings, data)
-    return vb:row {
-              vb:column {
-                  vb:row {
-                      vb:space  { width = 5 },
-                      vb:switch { id       = ID_SETTINGS_INTERVAL,
-                                  width    = 270,
-                                  bind     = settings.view_type,
-                                  notifier = function(new_index)
-                                                 settings.view_type.value = new_index
-                                                 update_interface(vb, settings, data)
-                                             end }
-                  },
-                  vb:row {
-                     vb:space { width = 5 },
-                     vb:row {
-                        vb:popup {id       = ID_SETTINGS_TUNING,
-                                  width    = SETTINGS_WIDTH * 3,
-                                  bind     = settings.tuning,
-                                  notifier = function(new_index)
-                                      settings.tuning.value = new_index
-                                      update_interface(vb, settings, data)
-                                  end }
-                        },
-                     vb:popup  { id       = ID_SETTINGS_TUNING_NOTE,
-                                 width    = SETTINGS_WIDTH,
-                                 bind     = settings.tuning_note,
-                                 notifier = function(new_index)
-                                     update_interface(vb, settings, data)
-                                 end },
-                     vb:popup  { id       = "popup_language",
-                                 items    = {"Deutsch", "English"},
-                                  width    = 70,
-                                  notifier = function(new_index)
-                                      if new_index == 1 then settings.language.value = "de"
-                                      else settings.language.value = "en"
-                                        end
-                                        update_interface(vb, settings, data)
-                                    end }
-                  },
-                  vb:row {
-                      vb:space  { width    = 5 },
-                      vb:text   { id       = ID_SETTINGS_CHORD_CALC,
-                                  width    = SETTINGS_WIDTH,
-                                  text    = "???" },
-                      vb:checkbox { id       = ID_SETTINGS_CHORD_CALC_BOX,
-                                    bind     = settings.chord_calculation,
-                                    width    = 15,
-                                    notifier = function(new_index)
-                                        update_interface(vb, settings, data)
-                                    end },
-                      vb:space  { width = SETTINGS_WIDTH },
-                      vb:text { id = ID_SETTINGS_REOPEN_NOTE, text = "???" }
-                  },
-              },
-              vb:space  { width    = 20 },
-              vb:rotary { min      =  1.0,
-                          max      = 50.0,
-                          default  =  3.5,
-                          width    =  2 * DEFAULT_CONTROL_HEIGHT,
-                          height   =  2 * DEFAULT_CONTROL_HEIGHT,
-                          bind     = settings.dissonance_threshold_1,
-                          notifier = function(value)
-                              settings.dissonance_threshold_1.value = value
-                              if value >= settings.dissonance_threshold_2.value then
-                                  settings.dissonance_threshold_1.value = settings.dissonance_threshold_2.value - 0.001
-                              end
-                              update_interface(vb, settings, data)
-                          end
-              },
-              vb:rotary { min      =  1.0,
-                          max      = 99.0,
-                          default  =  6.5,
-                          width    =  2 * DEFAULT_CONTROL_HEIGHT,
-                          height   =  2 * DEFAULT_CONTROL_HEIGHT,
-                          bind     = settings.dissonance_threshold_2,
-                          notifier = function(value)
-                              settings.dissonance_threshold_2.value = value
-                              if value <= settings.dissonance_threshold_1.value then
-                                  settings.dissonance_threshold_2.value = settings.dissonance_threshold_1.value + 0.001
-                              end
-                              if value >= settings.dissonance_threshold_3.value then
-                                  settings.dissonance_threshold_2.value = settings.dissonance_threshold_3.value - 0.001
-                              end
-                              update_interface(vb, settings, data, dialog_type)
-                          end
-              },
-              vb:rotary { min      =  1.0,
-                          max      = 99.0,
-                          default  = 11.0,
-                          width    =  2 * DEFAULT_CONTROL_HEIGHT,
-                          height   =  2 * DEFAULT_CONTROL_HEIGHT,
-                          bind     = settings.dissonance_threshold_3,
-                          notifier = function(value)
-                              settings.dissonance_threshold_3.value = value
-                              if value <= settings.dissonance_threshold_2.value then
-                                  settings.dissonance_threshold_3.value = settings.dissonance_threshold_2.value + 0.001
-                              end
-                              update_interface(vb, settings, data)
-                          end
-              },
-              vb:column { vb:text                { id      = ID_SETTINGS_DISSONANCE_THRESHOLD,
-                                                   text    = "???" },
-                          vb:row { vb:valuefield { min     =  1.0,
-                                                   max     = 10.0,
-                                                   width   = 45,
-                                                   active  = false,
-                                                   bind    = settings.dissonance_threshold_1 },
-                                   vb:valuefield { min     =  2.0,
-                                                   max     = 90.0,
-                                                   width   = 45,
-                                                   active  = false,
-                                                   bind    = settings.dissonance_threshold_2 },
-                                   vb:valuefield { min     =  5.0,
-                                                   max     = 99.0,
-                                                   width   = 45,
-                                                   active  = false,
-                                                   bind    = settings.dissonance_threshold_3 } }
-              },
-              vb:space  { width    = 10 },
-              vb:rotary { id       = ID_SETTINGS_HEARING_THRESHOLD_VALUE,
-                          min      =  0.004,
-                          max      =  0.015,
-                          default  =  0.004,
-                          width    =  2 * DEFAULT_CONTROL_HEIGHT,
-                          height   =  2 * DEFAULT_CONTROL_HEIGHT,
-                          bind     = settings.hearing_threshold,
-                          active   = true,
-                          notifier = function(value)
-                                         update_interface(vb, settings, data)
-                                     end },
-              vb:column { vb:text       { id      = ID_SETTINGS_HEARING_THRESHOLD,
-                                          text    = "???" },
-                          vb:valuefield { min     =  0.004,
-                                          max     =  0.015,
-                                          active  = false,
-                                          bind    = settings.hearing_threshold }
-              },
-              vb:rotary { min      =  0.00,
-                          max      =  1.00,
-                          default  =  0.20,
-                          width    =  2 * DEFAULT_CONTROL_HEIGHT,
-                          height   =  2 * DEFAULT_CONTROL_HEIGHT,
-                          bind     = settings.volume_reduction
-              },
-              vb:column { vb:text       { id      = ID_SETTINGS_VOLUME_REDUCTION,
-                                          text    = "???" },
-                          vb:valuefield { min     =  0.00,
-                                          max     =  1.00,
-                                          active  = false,
-                                          bind    = settings.volume_reduction }
-              },
-              vb:space  { width = 5 },
-              vb:column { vb:text       { id      = ID_SETTINGS_PITCH,
-                                          text    = "???" },
-                          vb:valuebox   { id      = ID_SETTINGS_PITCH_VALUE,
-                                          min     =  400.00,
-                                          max     =  470.00,
-                                          active  = true,
-                                          bind    = settings.pitch,
+    return
+        vb:column {
+           vb:row {
+                vb:switch { id = ID_SETTINGS_INTERVAL,
+                            width = 270,
+                            bind = settings.view_type,
+                            notifier = function(new_index)
+                                settings.view_type.value = new_index
+                                update_interface(vb, settings, data)
+                            end },
+                vb:popup { id = ID_SETTINGS_TUNING,
+                           width = SETTINGS_WIDTH * 3,
+                           bind = settings.tuning,
+                           notifier = function(new_index)
+                               settings.tuning.value = new_index
+                               update_interface(vb, settings, data)
+                           end },
+                vb:popup { id = ID_SETTINGS_TUNING_NOTE,
+                           width = SETTINGS_WIDTH,
+                           bind = settings.tuning_note,
+                           notifier = function(new_index)
+                               update_interface(vb, settings, data)
+                           end },
+                vb:popup { id = "popup_language",
+                           items = { "Deutsch", "English" },
+                           width = 70,
+                           notifier = function(new_index)
+                               if new_index == 1 then
+                                   settings.language.value = "de"
+                               else
+                                   settings.language.value = "en"
+                               end
+                               update_interface(vb, settings, data)
+                           end },
+                vb:space { width = 5 },
+                vb:text { id = ID_SETTINGS_CHORD_CALC,
+                          width = SETTINGS_WIDTH,
+                          text = "???" },
+                vb:checkbox { id = ID_SETTINGS_CHORD_CALC_BOX,
+                              bind = settings.chord_calculation,
+                              width = 15,
+                              notifier = function(new_index)
+                                  update_interface(vb, settings, data)
+                              end },
+                vb:space { width = 20 },
+                vb:text { id = ID_SETTINGS_REOPEN_NOTE, text = "???" }
+        },
+        vb:column {
+            vb:row {
+                vb:rotary { min = 1.0,
+                            max = 50.0,
+                            default = 3.5,
+                            width = 2 * DEFAULT_CONTROL_HEIGHT,
+                            height = 2 * DEFAULT_CONTROL_HEIGHT,
+                            bind = settings.dissonance_threshold_1,
+                            notifier = function(value)
+                                settings.dissonance_threshold_1.value = value
+                                if value >= settings.dissonance_threshold_2.value then
+                                    settings.dissonance_threshold_1.value = settings.dissonance_threshold_2.value - 0.001
+                                end
+                                update_interface(vb, settings, data)
+                            end
+                },
+                vb:rotary { min = 1.0,
+                            max = 99.0,
+                            default = 6.5,
+                            width = 2 * DEFAULT_CONTROL_HEIGHT,
+                            height = 2 * DEFAULT_CONTROL_HEIGHT,
+                            bind = settings.dissonance_threshold_2,
+                            notifier = function(value)
+                                settings.dissonance_threshold_2.value = value
+                                if value <= settings.dissonance_threshold_1.value then
+                                    settings.dissonance_threshold_2.value = settings.dissonance_threshold_1.value + 0.001
+                                end
+                                if value >= settings.dissonance_threshold_3.value then
+                                    settings.dissonance_threshold_2.value = settings.dissonance_threshold_3.value - 0.001
+                                end
+                                update_interface(vb, settings, data, dialog_type)
+                            end
+                },
+                vb:rotary { min = 1.0,
+                            max = 99.0,
+                            default = 11.0,
+                            width = 2 * DEFAULT_CONTROL_HEIGHT,
+                            height = 2 * DEFAULT_CONTROL_HEIGHT,
+                            bind = settings.dissonance_threshold_3,
+                            notifier = function(value)
+                                settings.dissonance_threshold_3.value = value
+                                if value <= settings.dissonance_threshold_2.value then
+                                    settings.dissonance_threshold_3.value = settings.dissonance_threshold_2.value + 0.001
+                                end
+                                update_interface(vb, settings, data)
+                            end
+                },
+                vb:column { vb:text { id = ID_SETTINGS_DISSONANCE_THRESHOLD,
+                                      text = "???" },
+                            vb:row { vb:valuefield { min = 1.0,
+                                                     max = 10.0,
+                                                     width = 45,
+                                                     active = false,
+                                                     bind = settings.dissonance_threshold_1 },
+                                     vb:valuefield { min = 2.0,
+                                                     max = 90.0,
+                                                     width = 45,
+                                                     active = false,
+                                                     bind = settings.dissonance_threshold_2 },
+                                     vb:valuefield { min = 5.0,
+                                                     max = 99.0,
+                                                     width = 45,
+                                                     active = false,
+                                                     bind = settings.dissonance_threshold_3 } }
+                },
+                vb:space { width = 10 },
+                vb:rotary { id = ID_SETTINGS_HEARING_THRESHOLD_VALUE,
+                            min = 0.004,
+                            max = 0.015,
+                            default = 0.004,
+                            width = 2 * DEFAULT_CONTROL_HEIGHT,
+                            height = 2 * DEFAULT_CONTROL_HEIGHT,
+                            bind = settings.hearing_threshold,
+                            active = true,
+                            notifier = function(value)
+                                update_interface(vb, settings, data)
+                            end },
+                vb:column { vb:text { id = ID_SETTINGS_HEARING_THRESHOLD,
+                                      text = "???" },
+                            vb:valuefield { min = 0.004,
+                                            max = 0.015,
+                                            active = false,
+                                            bind = settings.hearing_threshold }
+                },
+                vb:rotary { min = 0.00,
+                            max = 1.00,
+                            default = 0.20,
+                            width = 2 * DEFAULT_CONTROL_HEIGHT,
+                            height = 2 * DEFAULT_CONTROL_HEIGHT,
+                            bind = settings.volume_reduction
+                },
+                vb:column { vb:text { id = ID_SETTINGS_VOLUME_REDUCTION,
+                                      text = "???" },
+                            vb:valuefield { min = 0.00,
+                                            max = 1.00,
+                                            active = false,
+                                            bind = settings.volume_reduction }
+                },
+                vb:space { width = 5 },
+                vb:column { vb:text { id = ID_SETTINGS_PITCH,
+                                      text = "???" },
+                            vb:valuebox { id = ID_SETTINGS_PITCH_VALUE,
+                                          min = 400.00,
+                                          max = 470.00,
+                                          active = true,
+                                          bind = settings.pitch,
                                           notifier = function(value)
                                               update_interface(vb, settings, data)
                                           end }
-              },
-              vb:space  { width = 5 },
-              vb:column { vb:text       { id      = ID_SETTINGS_MATRIX_SIZE,
-                                          text    = "???" },
-                          vb:valuebox   { min     =  3,
-                                          max     = 24,
-                                          width   = SETTINGS_WIDTH,
-                                          active  = true,
-                                          bind    = settings.max_lines } },
-              vb:space  { width = 5 },
-              vb:column { vb:text       { id      = ID_SETTINGS_SEARCH_ROWS,
-                                          text    = "???" },
-                          vb:valuebox   { min     =   1,
-                                          max     = 255,
-                                          width   = SETTINGS_WIDTH,
-                                          active  = true,
-                                          bind    = settings.max_delta },
-              },
-              vb:space  { width = 5 },
-              vb:column { vb:text       { id      = ID_SETTINGS_TRACKS,
-                                          text    = "???" },
-                          vb:valuebox   { min     =   1,
-                                          max     =  12,
-                                          width   = SETTINGS_WIDTH,
-                                          active  = true,
-                                          bind    = settings.tracks },
-                  }
-              }
+                },
+                vb:space { width = 5 },
+                vb:column { vb:text { id = ID_SETTINGS_MATRIX_SIZE,
+                                      text = "???" },
+                            vb:valuebox { min = 3,
+                                          max = 24,
+                                          width = SETTINGS_WIDTH,
+                                          active = true,
+                                          bind = settings.max_lines } },
+                vb:space { width = 5 },
+                vb:column { vb:text { id = ID_SETTINGS_SEARCH_ROWS,
+                                      text = "???" },
+                            vb:valuebox { min = 1,
+                                          max = 255,
+                                          width = SETTINGS_WIDTH,
+                                          active = true,
+                                          bind = settings.max_delta },
+                },
+                vb:space { width = 5 },
+                vb:column { vb:text { id = ID_SETTINGS_TRACKS,
+                                      text = "???" },
+                            vb:valuebox { min = 1,
+                                          max = 12,
+                                          width = SETTINGS_WIDTH,
+                                          active = true,
+                                          bind = settings.tracks },
+                }
+            }
+        }
+    }
 end
 
 function table_header(vb, data, per_column_width, display_chords, dialog_type, index_width)
