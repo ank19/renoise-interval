@@ -418,10 +418,11 @@ end
 
 -- Initial creation of a condensed view
 function create_condensed_view(song, lines_of_interest)
-    local measures     = line_measures(song, lines_of_interest)
-    local min_delta    = math.huge
-    local notes        = {}
-    local complete     = true
+    local measures  = line_measures(song, lines_of_interest)
+    local min_delta = math.huge
+    local max_index = -math.huge
+    local notes     = {}
+    local complete  = true
     -- Create note matrix for calculating intervals first
     for i, p, v in ordered_line_pairs(lines_of_interest) do
         notes[i] = {}
@@ -454,9 +455,10 @@ function create_condensed_view(song, lines_of_interest)
             end
         end
         -- Set minimum delta between note line and current cursor position if applicable
-        if v.delta < min_delta then
-            min_delta = v.delta
-        end
+        if v.delta < min_delta then min_delta = v.delta end
+        -- Store highest sequence and line numbers to fine-tune column width
+        local index_len = string.len(index_string(p.sequence, p.line))
+        if index_len > max_index then max_index = index_len end
     end
     if #notes[1] == 0 then
         return nil
@@ -501,6 +503,7 @@ function create_condensed_view(song, lines_of_interest)
              view       = view,
              notes      = notes,
              note_count = #notes[1],
+             max_index  = max_index,
              complete   = complete,
              status     = complete and { status = STATUS_OK           , color = COLOR_DEFAULT        }
                                     or { status = STATUS_LINES_OMITTED, color = COLOR_STATUS_WARNING }}
