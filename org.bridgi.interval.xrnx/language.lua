@@ -287,21 +287,23 @@ local function update_interval(vb, data, settings, dialog_type)
                     properties = interval:properties()
                     dissonance = properties.dissonance
                 else
-                    local wrapper = interval.chord
-                    if wrapper then
-                        dissonance = wrapper()
+                    if type(interval.chord) == "function" then
+                        local wrapper = interval.chord
+                        if wrapper then
+                            dissonance = wrapper()
+                        end
                     end
                 end
                 if dissonance then
                     local dissonance_text, dissonance_color = dissonance_details(dissonance, settings, dialog_type)
                     if     view_type == 1 or interval.chord then update_text (vb, view_id, dissonance_text )
-                                                                 update_color(vb, view_id, dissonance_color)
+                        update_color(vb, view_id, dissonance_color)
                     elseif view_type == 2 then update_text (vb, view_id, interval_text(language, interval, dialog_type))
-                                               update_color(vb, view_id, dissonance_color)
+                        update_color(vb, view_id, dissonance_color)
                     elseif view_type == 3 then update_text (vb, view_id, effect_text(language, interval, dialog_type))
-                                               update_color(vb, view_id, dissonance_color)
+                        update_color(vb, view_id, dissonance_color)
                     elseif view_type == 4 then update_text (vb, view_id, cents_text(properties, dialog_type))
-                                               update_color(vb, view_id, dissonance_color)
+                        update_color(vb, view_id, dissonance_color)
                     end
                 end
             end
@@ -316,14 +318,15 @@ function update_interface(vb, settings, data)
     local status_text       = status_texts[status][language]
     local counterpoint      = data.counterpoint
     local counterpoint_text = counterpoint_texts[COUNTERPOINT_OK][language]
-    if counterpoint.code then
+    if counterpoint and counterpoint.code then
         counterpoint_text = counterpoint_texts[counterpoint.code][language]..counterpoint.details
         update_color(vb, ID_COUNTERPOINT_BAR, COLOR_STATUS_WARNING)
-    else
-        update_color(vb, ID_COUNTERPOINT_BAR, COLOR_DEFAULT)
+    --else
+       -- update_color(vb, ID_COUNTERPOINT_BAR, COLOR_DEFAULT)
+        update_text    (vb, ID_COUNTERPOINT_BAR             , counterpoint_text)
     end
     update_text    (vb, ID_STATUS_BAR                   , status_text)
-    update_text    (vb, ID_COUNTERPOINT_BAR             , counterpoint_text)
+
 
     if chords_displayed(vb, data, settings) then
         update_text(vb, ID_HEADER_CHORD_ACTUAL          , chord_header_actual      [language][dialog_type])

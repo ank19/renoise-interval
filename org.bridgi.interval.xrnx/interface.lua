@@ -285,7 +285,8 @@ function note_button(vb, per_column_width, element, dialog_type)
                                                             active = false,
                                                             text   = dialog_type == 1 and "\n---\n" or "-" }}}
     else
-        local note_text = dialog_type == 1 and "\n"..note.string.." ("..tostring(note.volume)..")\n" or note.string
+        local volume_text = string.format("%X", tonumber(note.volume))
+        local note_text = dialog_type == 1 and "\n"..note.string.." ("..volume_text..")\n" or note.string
         return vb:row { style = "plain",
                         vb:horizontal_aligner { mode  = "center",
                                                 width = per_column_width,

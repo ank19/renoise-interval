@@ -396,18 +396,18 @@ function find_lines_of_interest(song, track_index, position)
     lines_seen, lines_of_interest = add_lines(song, lines_seen, lines_of_interest, track_index, position, false)
     -- Determine how many lines there are in the same range of the lines of interest
     local p
-    for i, _, line_of_interest in ordered_line_pairs(lines_of_interest) do
+    for i, j, line_of_interest in ordered_line_pairs(lines_of_interest) do
         local lines_in_between = {}
         if i > 1 then
-            for k, v in ipairs(lines_seen) do
-                if is_before_line(p, k) and is_before(k, line_of_interest) then
-                    table.insert(lines_in_between, v)
+            for _, k, line_seen in ordered_line_pairs(lines_seen) do
+                if is_before_line(p, k) and is_after_line(j, k) then
+                    table.insert(lines_in_between, line_seen)
                     -- Do not consider gaps here, the line might not contain any notes at all
                 end
             end
         end
         line_of_interest.in_between = lines_in_between
-        p = line_of_interest
+        p = j
     end
     return lines_of_interest
 end
@@ -444,7 +444,14 @@ function create_condensed_view(song, lines_of_interest)
                     -- Check if there are lines in between which were left out
                     if v.in_between then
                         for _, b in ipairs(v.in_between) do
-                            if is_note(b.note_columns[column].note_value) then
+                            local line = b.lines[k + 1]
+                            if not line then
+                                renoise.app():show_message("B lines: "..dump(b.lines))
+                            end
+                            if not line.note_columns then
+                                renoise.app():show_message("Line: "..dump(line))
+                            end
+                            if is_note(line.note_columns[column].note_value) then
                                 notes[i][j].gaps = true
                                 -- Memorize if there's at least one skipped note
                                 complete = false
@@ -610,7 +617,7 @@ function get_chords(notes, complete)
 
         chord_actual[row].chord = dissect_chord_wrapper(unpack(chord_actual[row]))
         -- Lingering chord dissonance only makes sense if no lines were omitted
-        chord_linger[row].chord = complete and dissect_chord_wrapper(unpack(chord_linger[row])) or nil
+        chord_linger[row].chord = complete and dissect_chord_wrapper(unpack(chord_linger[row])) or {}
     end
     return { actual = chord_actual, linger = chord_linger }
 end
@@ -622,7 +629,7 @@ end
 -- Check for some violations according to the counterpoint (Kontrapunkt) system
 function check_counterpoint(data)
     if not data.complete then
-        return
+        return data
     end
     local notes = data.notes
     local row_count = #notes
@@ -709,5 +716,5 @@ function calculate_intervals(dialog_type)
     renoise.app():show_custom_dialog("Interval Analysis", dialog_content)
     update_interface(vb, settings, data)
 
-    log_marker("INTERVAL ANALYSIS ENDED ")
+    log_marker("INTERVAL ANALYSIS ENDED")
 end
