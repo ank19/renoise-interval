@@ -180,7 +180,7 @@ function configuration_section(vb, settings, data)
                                           max = 24,
                                           width = SETTINGS_WIDTH,
                                           active = true,
-                                          bind = settings.max_lines } },
+                                          bind = settings_lines() } },
                 vb:space { width = 5 },
                 vb:column { vb:text { id = ID_SETTINGS_SEARCH_ROWS,
                                       text = "???" },
@@ -188,7 +188,7 @@ function configuration_section(vb, settings, data)
                                           max = 255,
                                           width = SETTINGS_WIDTH,
                                           active = true,
-                                          bind = settings.max_delta },
+                                          bind = settings_delta() },
                 },
                 vb:space { width = 5 },
                 vb:column { vb:text { id = ID_SETTINGS_TRACKS,
@@ -197,7 +197,7 @@ function configuration_section(vb, settings, data)
                                           max = 12,
                                           width = SETTINGS_WIDTH,
                                           active = true,
-                                          bind = settings.tracks },
+                                          bind = settings_tracks() },
                 }
             }
         }
@@ -235,7 +235,7 @@ function table_header(vb, data, per_column_width, display_chords, dialog_type, i
                                                                           height = HEADER_HEIGHT,
                                                                           color  = COLOR_HEADER_2,
                                                                           active = false,
-                                                                          text   = dialog_type == 1 and "Interval" or "I"}}})
+                                                                          text   = dialog_type == DIALOG_CONDENSED and "Interval" or "I"}}})
             head_aligner:add_child(column)
         end
     end
@@ -270,7 +270,7 @@ function data_button(vb, per_column_width, element, row, col, dialog_type)
                                                         height  = ELEMENT_HEIGHT,
                                                         color   = COLOR_DEFAULT,
                                                         active  = false,
-                                                        text    = dialog_type == 1 and "\n---\n" or "-" }}}
+                                                        text    = dialog_type == DIALOG_CONDENSED and "\n---\n" or "-" }}}
 end
 
 function note_button(vb, per_column_width, element, dialog_type)
@@ -283,10 +283,10 @@ function note_button(vb, per_column_width, element, dialog_type)
                                                             height = ELEMENT_HEIGHT,
                                                             color  = note.marker and COLOR_NO_NOTE_MARKER or COLOR_NO_NOTE,
                                                             active = false,
-                                                            text   = dialog_type == 1 and "\n---\n" or "-" }}}
+                                                            text   = dialog_type == DIALOG_CONDENSED and "\n---\n" or "-" }}}
     else
         local volume_text = string.format("%X", tonumber(note.volume))
-        local note_text = dialog_type == 1 and "\n"..note.string.." ("..volume_text..")\n" or note.string
+        local note_text = dialog_type == DIALOG_CONDENSED and "\n"..note.string.." ("..volume_text..")\n" or note.string
         return vb:row { style = "plain",
                         vb:horizontal_aligner { mode  = "center",
                                                 width = per_column_width,
@@ -299,7 +299,7 @@ function note_button(vb, per_column_width, element, dialog_type)
 end
 
 function text_button(vb, per_column_width, element, dialog_type)
-    local text = dialog_type == 1 and "\n----- "..tostring(element.text).." -----\n" or tostring(element.text)
+    local text = dialog_type == DIALOG_CONDENSED and "\n----- "..tostring(element.text).." -----\n" or tostring(element.text)
     return vb:row { style = "body",
                     vb:horizontal_aligner { mode  = "center",
                                             width = per_column_width,
@@ -325,7 +325,7 @@ function create_dialog(vb, settings, data, dialog_type)
     local base_width           = math.min(column_count * usable_window_width / max_expected_colums, usable_window_width)
     local per_column_width     = base_width / column_count
     local total_width          = column_count * per_column_width + SEPARATOR_WIDTH
-    local configuration_view   = configuration_section(vb, settings, data)
+    local configuration_view   = configuration_section(vb, settings, data, dialog_type)
     local matrix_view          = vb:column { width = total_width, margin = CONTENT_MARGIN }
     local dialog_content       = vb:column { width = total_width, configuration_view, matrix_view }
     local index_width = INDEX_WIDTH * (data.max_index / 3.5)
@@ -341,13 +341,13 @@ function create_dialog(vb, settings, data, dialog_type)
                                                        height = ELEMENT_HEIGHT,
                                                        active = false,
                                                        color  = COLOR_IS_NOTE_MARKER,
-                                                       text   = dialog_type == 1 and "\n"..index.."\n" or index }})
+                                                       text   = dialog_type == DIALOG_CONDENSED and "\n"..index.."\n" or index }})
         else
             aligner:add_child( vb:column { vb:button { width  = index_width,
                                                        height = ELEMENT_HEIGHT,
                                                        active = false,
                                                        color  = COLOR_DEFAULT,
-                                                       text   = dialog_type == 1 and "\n-\n" or "-" }})
+                                                       text   = dialog_type == DIALOG_CONDENSED and "\n-\n" or "-" }})
         end
         for x = 1, column_count do
             local column = vb:column { width = per_column_width }
@@ -358,7 +358,7 @@ function create_dialog(vb, settings, data, dialog_type)
                                                            height = ELEMENT_HEIGHT,
                                                            active = false,
                                                            color  = COLOR_BLACK,
-                                                           text   = dialog_type == 1 and "\n\n" or "" }})
+                                                           text   = dialog_type == DIALOG_CONDENSED and "\n\n" or "" }})
             end
             if     element.type == "note" then column:add_child(note_button(vb, per_column_width, element, dialog_type))
             elseif element.type == "data" then column:add_child(data_button(vb, per_column_width, element, y, x, dialog_type))

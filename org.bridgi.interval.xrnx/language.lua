@@ -157,9 +157,9 @@ settings_pitch = {}
 settings_pitch["de"] = "Kammerton a' (A4)"
 settings_pitch["en"] = "Diaspon a' (A4)"
 
-settings_tracks = {}
-settings_tracks["de"] = "Spuren*"
-settings_tracks["en"] = "Tracks*"
+settings_search_tracks = {}
+settings_search_tracks["de"] = "Spuren*"
+settings_search_tracks["en"] = "Tracks*"
 
 settings_reopen_note = {}
 settings_reopen_note["de"] = "*=Fenster muss neu geöffnet werden"
@@ -338,8 +338,8 @@ function update_interface(vb, settings, data)
     update_text    (vb, ID_SETTINGS_PITCH               , settings_pitch           [language])
     update_text    (vb, ID_SETTINGS_MATRIX_SIZE         , settings_matrix_size     [language])
     update_text    (vb, ID_SETTINGS_SEARCH_ROWS         , settings_search_rows     [language])
+    update_text    (vb, ID_SETTINGS_TRACKS              , settings_search_tracks   [language])
     update_text    (vb, ID_SETTINGS_CHORD_CALC          , settings_chord_calc      [language])
-    update_text    (vb, ID_SETTINGS_TRACKS              , settings_tracks          [language])
     update_text    (vb, ID_SETTINGS_REOPEN_NOTE         , settings_reopen_note     [language])
     update_items   (vb, ID_SETTINGS_INTERVAL            , settings_interval        [language])
     update_items   (vb, ID_SETTINGS_TUNING              , settings_tuning          [language])

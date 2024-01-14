@@ -8,14 +8,14 @@ require 'settings'
 require 'tunings'
 
 renoise.tool():add_menu_entry { name   = "Main Menu:Tools:Bridgi:Interval Calculator (Condensed view)",
-                                invoke = function() calculate_intervals(1) end }
+                                invoke = function() calculate_intervals(DIALOG_CONDENSED) end }
 renoise.tool():add_menu_entry { name   = "Main Menu:Tools:Bridgi:Interval Calculator (Compact view)",
-                                invoke = function() calculate_intervals(2) end }
+                                invoke = function() calculate_intervals(DIALOG_COMPACT) end }
 
 renoise.tool():add_keybinding { name   = "Global:Tools:Interval Calculator (Condensed view)",
-                                invoke = function() calculate_intervals(1) end }
+                                invoke = function() calculate_intervals(DIALOG_CONDENSED) end }
 renoise.tool():add_keybinding { name   = "Global:Tools:Interval Calculator (Compact view)",
-                                invoke = function() calculate_intervals(2) end }
+                                invoke = function() calculate_intervals(DIALOG_COMPACT) end }
 
 --  ____ ____ _  _ ____ ____ _ ____    _ _  _ ___ ____ ____ _  _ ____ _       ____ _  _ _  _ ____ ___ _ ____ _  _ ____
 --  | __ |___ |\ | |___ |__/ | |       | |\ |  |  |___ |__/ |  | |__| |       |___ |  | |\ | |     |  | |  | |\ | [__
@@ -142,7 +142,7 @@ end
 -- Retrieve lines from all tracks of interest
 local function get_lines(song, position)
     local lines = {}
-    for i = 0, settings.tracks.value - 1 do
+    for i = 0, settings_tracks().value - 1 do
         local track_index   = song.selected_track_index + i
         local pattern_index = song.sequencer.pattern_sequence[position.sequence]
         local pattern_track = song.patterns[pattern_index].tracks[track_index]
@@ -169,7 +169,7 @@ local function look_back(song, lines_seen, track_index, position, column, delta,
             pattern_track = prev_pattern.tracks[track_index]
             line_index = prev_pattern.number_of_lines
         else
-            if line_index < 1 or n + delta > settings.max_delta.value then
+            if line_index < 1 or n + delta > settings_delta().value then
                 return nil, lines_seen
             end
         end
@@ -206,7 +206,7 @@ local function look_after(song, lines_seen, track_index, position, column, delta
             pattern_track = next_pattern.tracks[track_index]
             line_index = 1
         else
-            if line_index > lines_count or n + delta > settings.max_delta.value then
+            if line_index > lines_count or n + delta > settings_delta().value then
                 return nil, lines_seen
             end
         end
@@ -264,7 +264,7 @@ end
 
 -- Helper function to check whether the maximum number of lines to be displayed is already reached
 local function max_lines_reached(lines_of_interest)
-    return count_keys(lines_of_interest) >= settings.max_lines.value
+    return count_keys(lines_of_interest) >= settings_lines().value
 end
 
 -- Get some details about what the search yielded so far
@@ -284,7 +284,7 @@ end
 -- Get measures
 function line_measures(song, lines_of_interest)
     local measures = {}
-    for i = 0, settings.tracks.value - 1 do
+    for i = 0, settings_tracks().value - 1 do
         local track_index   = i + song.selected_track_index
         local column_count  = get_visible_columns(song, track_index)
         local columns       = {}
@@ -323,7 +323,7 @@ function add_lines(song, lines_seen, lines_of_interest, track_index, position, t
         -- Alternate backward and forward search
         if not flag then
             if b then
-                for i = 0, settings.tracks.value - 1 do
+                for i = 0, settings_tracks().value - 1 do
                     if b then
                         b, lines_seen = look_back(song, lines_seen, track_index + i, b.position, nil, delta_b, take_all)
                     end
@@ -334,7 +334,7 @@ function add_lines(song, lines_seen, lines_of_interest, track_index, position, t
             flag = true
         elseif flag then
             if a then
-                for i = 0, settings.tracks.value - 1 do
+                for i = 0, settings_tracks().value - 1 do
                     if a then
                         a, lines_seen = look_after(song, lines_seen, track_index + i, a.position, nil, delta_a, take_all)
                     end
@@ -354,7 +354,7 @@ function find_lines(song, track_index, position)
     local lines_of_interest = {}
     local lines_seen        = {}
     local line
-    for i = 0, settings.tracks.value - 1 do
+    for i = 0, settings_tracks().value - 1 do
         local column_count = get_visible_columns(song, track_index + i)
         for j = 1, column_count do
             line, lines_seen = look_current(song, lines_seen, track_index + i, position, j)
@@ -373,7 +373,7 @@ function find_lines_of_interest(song, track_index, position)
     local a, b, c
     -- Make sure that for each note in a column at least one interval is found if any
     -- This might result in "missing" lines, which is favoured to get a more compact representation
-    for i = 0, settings.tracks.value - 1 do
+    for i = 0, settings_tracks().value - 1 do
         local column_count = get_visible_columns(song, track_index + i)
         for j = 1, column_count do
             local measures = line_measures(song, lines_of_interest)
@@ -427,7 +427,7 @@ function create_condensed_view(song, lines_of_interest)
     for i, p, v in ordered_line_pairs(lines_of_interest) do
         notes[i] = {}
         local j = 0
-        for k = 0, settings.tracks.value - 1 do
+        for k = 0, settings_tracks().value - 1 do
             for column = 1, measures[song.selected_track_index + k].column_count do
                 if not measures[song.selected_track_index + k].columns[column].is_empty then
                     j = j + 1
@@ -683,6 +683,8 @@ end
 function calculate_intervals(dialog_type)
 
     log_marker("INTERVAL ANALYSIS STARTED")
+
+    settings.dialog_type.value = dialog_type
 
     -- Find notes
     local song        = renoise.song()

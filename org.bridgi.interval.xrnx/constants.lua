@@ -128,6 +128,9 @@ ID_SETTINGS_CHORD_CALC_BOX          = "chord_calculation_box"
 ID_SETTINGS_REOPEN_NOTE             = "reopen_note"
 ID_SETTINGS_TRACKS                  = "tracks"
 
+DIALOG_CONDENSED = 1
+DIALOG_COMPACT   = 2
+
 --   _______ _______ _______ _______ _     _ _______
 --   |______    |    |_____|    |    |     | |______
 --   ______|    |    |     |    |    |_____| ______|
