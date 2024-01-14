@@ -321,10 +321,14 @@ function update_interface(vb, settings, data)
     if counterpoint and counterpoint.code then
         counterpoint_text = counterpoint_texts[counterpoint.code][language]..counterpoint.details
         update_color(vb, ID_COUNTERPOINT_BAR, COLOR_STATUS_WARNING)
-    --else
-       -- update_color(vb, ID_COUNTERPOINT_BAR, COLOR_DEFAULT)
-        update_text    (vb, ID_COUNTERPOINT_BAR             , counterpoint_text)
+        update_text (vb, ID_COUNTERPOINT_BAR, counterpoint_text)
+    else
+        if vb.views[ID_COUNTERPOINT_BAR] then
+            update_color(vb, ID_COUNTERPOINT_BAR, COLOR_DEFAULT)
+            update_text (vb, ID_COUNTERPOINT_BAR, "---")
+        end
     end
+
     update_text    (vb, ID_STATUS_BAR                   , status_text)
 
 

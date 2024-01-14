@@ -388,7 +388,7 @@ function create_dialog(vb, settings, data, dialog_type)
                                                       id     = ID_COUNTERPOINT_BAR,
                                                       color  = COLOR_STATUS_WARNING,
                                                       active = false,
-                                                      text   = "???" }})
+                                                      text   = "---" }})
     end
     return dialog_content
 end

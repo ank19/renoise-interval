@@ -139,4 +139,4 @@ DIALOG_COMPACT   = 2
 STATUS_OK                      = "ok"
 STATUS_LINES_OMITTED           = "omitted"
 COUNTERPOINT_PATTERN_VIOLATION = "pattern_violation"
-COUNTERPOINT_OK                = "ok"
+COUNTERPOINT_OK                = "---"
