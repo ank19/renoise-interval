@@ -358,11 +358,13 @@ function find_lines(song, track_index, position)
         local column_count = get_visible_columns(song, track_index + i)
         for j = 1, column_count do
             line, lines_seen = look_current(song, lines_seen, track_index + i, position, j)
-            if line then lines_of_interest[line.position] = line.lines end
+            if line then
+                lines_of_interest[line.position] = line.lines
+            end
             if max_lines_reached(lines_of_interest) then break end
         end
     end
-    lines_seen, lines_of_interest = add_lines(song, lines_seen, lines_of_interest, track_index, position, true)
+    lines_seen, lines_of_interest = add_lines(song, lines_seen, lines_of_interest, track_index, position, settings.skip_empty_compact.value)
     return lines_of_interest
 end
 
@@ -417,7 +419,7 @@ end
 --  |__] |__| | |___ |__/    |  | |  |  |  |  \ | _/\_
 
 -- Initial creation of a condensed view
-function create_condensed_view(song, lines_of_interest)
+function create_view(song, lines_of_interest)
     local measures  = line_measures(song, lines_of_interest)
     local min_delta = math.huge
     local max_index = -math.huge
@@ -703,8 +705,8 @@ function calculate_intervals(dialog_type)
         return
     end
 
-    -- Create condensed view and check for some counterpoint violations
-    local data = create_condensed_view(song, lines, track_index)
+    -- Create view and check for some counterpoint violations
+    local data = create_view(song, lines, track_index)
     if not data then
         renoise.app():show_message("No columns to display found (empty?)")
         return

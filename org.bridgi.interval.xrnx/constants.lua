@@ -33,26 +33,23 @@ CYCLE_OF_FIFTHS = {               --|--
   { 0, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10, 5 }
 }
 
-EQUAL_TEMPERAMENT =
--- The same fractions are used as just tuning, as, of course, the irrational numbers of the equal temperament cannot
--- be represented as whole number fractions. Just tuning is used as a approximation. Pls. also note that there is a
--- special rule in the interval_properties() method for calculating cents, as these ratios cannot be used, of course.
-  { {  1,   1},
-    { 16,  15},
-    {  9,   8},
-    {  6,   5},
-    {  5,   4},
-    {  4,   3},
-    {  7,   5},
-    {  3,   2},
-    {  8,   5},
-    {  5,   3},
-    {  9,   5},
-    { 15,   8},
-    {  2,   1} }
+-- Index of Kammerton a' == 9 (in renoise A4 = 57 = 4 * 12 + 9)
+REFERENCE_NOTE_CYCLE_INDEX = { 9, 2, 7, 12, 5, 10, 3, 8, 1, 6, 11, 4 }
+
+--  ___ _  _ _  _ _ _  _ ____    ____ ____ _  _ ____ ___ ____ _  _ ___ ____
+--   |  |  | |\ | | |\ | | __    |    |  | |\ | [__   |  |__| |\ |  |  [__
+--   |  |__| | \| | | \| |__]    |___ |__| | \| ___]  |  |  | | \|  |  ___]
+--
+
+SYNTONIC_COMMA    =     81 /     80
+PYTHAGOREAN_COMMA = 531441 / 524288
+
+--  ___  _  _ ____ ____    _ _  _ ___ ____ ____ _  _ ____ _    ____
+--  |__] |  | |__/ |___    | |\ |  |  |___ |__/ |  | |__| |    [__
+--  |    |__| |  \ |___    | | \|  |  |___ |  \  \/  |  | |___ ___]
+--
 
 PURE_INTERVALS =
-  -- Pure intervals
   { {  1,   1},
     { 16,  15},
     {  9,   8},
@@ -127,6 +124,8 @@ ID_SETTINGS_CHORD_CALC              = "chord_calculation"
 ID_SETTINGS_CHORD_CALC_BOX          = "chord_calculation_box"
 ID_SETTINGS_REOPEN_NOTE             = "reopen_note"
 ID_SETTINGS_TRACKS                  = "tracks"
+ID_SETTINGS_SKIP_EMPTY              = "skip_empty"
+ID_SETTINGS_SKIP_EMPTY_BOX          = "skip_empty_box"
 
 DIALOG_CONDENSED = 1
 DIALOG_COMPACT   = 2

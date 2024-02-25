@@ -22,7 +22,8 @@ settings = renoise.Document.create("IntervalCalculatorSettings") {
     tracks_compact         =   3,
     delta_compact          =  64,
     lines_compact          =  24,
-    chord_calculation      = true
+    chord_calculation      = true,
+    skip_empty_compact     = true
 }
 
 -- Return number of tracks to be scanned for analysis

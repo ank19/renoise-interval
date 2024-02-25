@@ -130,8 +130,8 @@ settings_interval["de"] = {"Sonanz" , "Intervall", "Effekt", "Cents"}
 settings_interval["en"] = {"Sonance", "Interval" , "Effect", "Cents"}
 
 settings_tuning = {}
-settings_tuning["de"] = {"Reine Intervalle", "Gleichstufig"     ,"Pythagoreisch"}
-settings_tuning["en"] = {"Pure intervals"  , "Equal temperament","Pythagorean"  }
+settings_tuning["de"] = {"Reine Intervalle", "Gleichstufig"     ,"Pythagoreisch", "Kirnberger III", "1/6 Mitteltönig"}
+settings_tuning["en"] = {"Pure intervals"  , "Equal temperament","Pythagorean"  , "Kirnberger III", "1/6 Meantone"}
 
 settings_tuning_note = {}
 settings_tuning_note["de"] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "H"}
@@ -153,6 +153,10 @@ settings_chord_calc = {}
 settings_chord_calc["de"] = "Akkorde*"
 settings_chord_calc["en"] = "Chords*"
 
+settings_skip_empty = {}
+settings_skip_empty["de"] = "Leerzeilen*"
+settings_skip_empty["en"] = "Empty lines*"
+
 settings_pitch = {}
 settings_pitch["de"] = "Kammerton a' (A4)"
 settings_pitch["en"] = "Diaspon a' (A4)"
@@ -162,8 +166,8 @@ settings_search_tracks["de"] = "Spuren*"
 settings_search_tracks["en"] = "Tracks*"
 
 settings_reopen_note = {}
-settings_reopen_note["de"] = "*=Fenster muss neu geöffnet werden"
-settings_reopen_note["en"] = "*=Window must be re-opened"
+settings_reopen_note["de"] = "*=Fenster schließen"
+settings_reopen_note["en"] = "*=Reopen window"
 
 status_texts = {}
 status_texts[STATUS_OK] = {}
@@ -344,6 +348,7 @@ function update_interface(vb, settings, data)
     update_text    (vb, ID_SETTINGS_SEARCH_ROWS         , settings_search_rows     [language])
     update_text    (vb, ID_SETTINGS_TRACKS              , settings_search_tracks   [language])
     update_text    (vb, ID_SETTINGS_CHORD_CALC          , settings_chord_calc      [language])
+    update_text    (vb, ID_SETTINGS_SKIP_EMPTY          , settings_skip_empty      [language])
     update_text    (vb, ID_SETTINGS_REOPEN_NOTE         , settings_reopen_note     [language])
     update_items   (vb, ID_SETTINGS_INTERVAL            , settings_interval        [language])
     update_items   (vb, ID_SETTINGS_TUNING              , settings_tuning          [language])

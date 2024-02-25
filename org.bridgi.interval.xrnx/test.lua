@@ -61,17 +61,29 @@ function Document:create(test)
      hearing_threshold = {
          value = HEARING_THRESHOLD
      },
-     max_delta = {
+     delta_condensed = {
          value = 99
      },
-     max_lines = {
+     delta_compact = {
+         value = 255
+     },
+     lines_condensed = {
+         value = MAX_LINES
+     },
+     lines_compact = {
          value = MAX_LINES
      },
      volume_reduction = {
          value = 0.20
      },
-     tracks = {
+     tracks_condensed = {
          value = 1
+     },
+     tracks_compact = {
+         value = 2
+     },
+     dialog_type = {
+         value = DIALOG_CONDENSED
      }
  }  end
 end
@@ -246,6 +258,140 @@ local function test_approximation()
     assert_approximation( 9,  5, 1.782, limit, interval_texts["en"][11])
     assert_approximation(15,  8, 1.888, limit, interval_texts["en"][12])
     assert_approximation( 2,  1, 2.000, limit, interval_texts["en"][13])
+end
+
+
+
+--  ___ ____ ____ ___ ____     ____ _ _  _ ___ _  _    ____ ____ _  _ _  _ ____    _  _ ____ ____ _  _ ___ ____ _  _ ____
+--   |  |___ [__   |  [__  .   [__  |  \/   |  |__| __ |    |  | |\/| |\/| |__|    |\/| |___ |__| |\ |  |  |  | |\ | |___
+--   |  |___ ___]  |  ___] .   ___] | _/\_  |  |  |    |___ |__| |  | |  | |  |    |  | |___ |  | | \|  |  |__| | \| |___
+--
+
+local SIXTH_COMMA_D4  =  587.88
+local SIXTH_COMMA_Eb4 =  618.05  --  TODO: Should be 618.7Hz
+local SIXTH_COMMA_E4  =  658.63
+local SIXTH_COMMA_F4  =  701.10
+local SIXTH_COMMA_Gb4 =  737.90
+local SIXTH_COMMA_G4  =  785.47
+local SIXTH_COMMA_Ab4 =  826.70
+local SIXTH_COMMA_A4  =  880.00
+local SIXTH_COMMA_Bb4 =  925.16   --  TODO: Should be 926.2Hz
+local SIXTH_COMMA_B4  =  985.90
+local SIXTH_COMMA_C5  = 1049.46
+local SIXTH_COMMA_Db5 = 1104.56
+local SIXTH_COMMA_D5  = 1175.77
+
+-- calculate_frequency(note, tuning_note, tuning_frequency)
+
+local function assert_sixth_comma(expected_hz, note, message)
+    test_log("Calculating Sixth Comma for note "..note)
+    local actual_hz = sixth_comma_frequency(note)
+    assert(is_almost(actual_hz, expected_hz), "Sixth comma "..message..": Expected "..expected_hz.."Hz, but got "..actual_hz.."Hz")
+    test_log("Verified Sixth comma frequency "..expected_hz.." for "..message)
+end
+
+local function test_sixth_comma_frequencies()
+    assert_sixth_comma(SIXTH_COMMA_D4 , 62, "D4")
+    assert_sixth_comma(SIXTH_COMMA_Eb4, 63, "Eb4")
+    assert_sixth_comma(SIXTH_COMMA_E4 , 64, "E4")
+    assert_sixth_comma(SIXTH_COMMA_F4 , 65, "F4")
+    assert_sixth_comma(SIXTH_COMMA_Gb4, 66, "Gb4")
+    assert_sixth_comma(SIXTH_COMMA_G4 , 67, "G4")
+    assert_sixth_comma(SIXTH_COMMA_Ab4, 68, "Ab4")
+    assert_sixth_comma(SIXTH_COMMA_A4 , 69, "A4")
+    assert_sixth_comma(SIXTH_COMMA_Bb4, 70, "Bb4")
+    assert_sixth_comma(SIXTH_COMMA_B4 , 71, "B4")
+    assert_sixth_comma(SIXTH_COMMA_C5 , 72, "C5")
+    assert_sixth_comma(SIXTH_COMMA_Db5, 73, "Db5")
+    assert_sixth_comma(SIXTH_COMMA_D5 , 74, "D5")
+end
+
+--  ___ ____ ____ ___ ____     _ _ _ ____ ____ ____ _  _ _  _ ____ _ ____ ___ ____ ____    _ _ _
+--   |  |___ [__   |  [__  .   | | | |___ |__/ |    |_/  |\/| |___ | [__   |  |___ |__/    | | |
+--   |  |___ ___]  |  ___] .   |_|_| |___ |  \ |___ | \_ |  | |___ | ___]  |  |___ |  \    | | |
+--
+
+local WERCKMEISTER_III_D4  =  588.66
+local WERCKMEISTER_III_Eb4 =  620.15
+local WERCKMEISTER_III_E4  =  657.77
+local WERCKMEISTER_III_F4  =  697.67
+local WERCKMEISTER_III_Gb4 =  737.49
+local WERCKMEISTER_III_G4  =  784.88
+local WERCKMEISTER_III_Ab4 =  826.87
+local WERCKMEISTER_III_A4  =  880.00
+local WERCKMEISTER_III_Bb4 =  930.22
+local WERCKMEISTER_III_B4  =  983.31
+local WERCKMEISTER_III_C5  = 1046.50
+local WERCKMEISTER_III_Db5 = 1106.23
+local WERCKMEISTER_III_D5  = 1177.32
+
+-- calculate_frequency(note, tuning_note, tuning_frequency)
+
+local function assert_werckmeister3(expected_hz, note, message)
+    test_log("Calculating Werckmeister III for note "..note)
+    local actual_hz = werckmeister3_frequency(note)
+    assert(is_almost(actual_hz, expected_hz), "Werckmeister III "..message..": Expected "..expected_hz.."Hz, but got "..actual_hz.."Hz")
+    test_log("Verified Werckmeister III frequency "..expected_hz.." for "..message)
+end
+
+local function test_werckmeister3_frequencies()
+    assert_werckmeister3(WERCKMEISTER_III_D4 , 62, "D4")
+    assert_werckmeister3(WERCKMEISTER_III_Eb4, 63, "Eb4")
+    assert_werckmeister3(WERCKMEISTER_III_E4 , 64, "E4")
+    assert_werckmeister3(WERCKMEISTER_III_F4 , 65, "F4")
+    assert_werckmeister3(WERCKMEISTER_III_Gb4, 66, "Gb4")
+    assert_werckmeister3(WERCKMEISTER_III_G4 , 67, "G4")
+    assert_werckmeister3(WERCKMEISTER_III_Ab4, 68, "Ab4")
+    assert_werckmeister3(WERCKMEISTER_III_A4 , 69, "A4")
+    assert_werckmeister3(WERCKMEISTER_III_Bb4, 70, "Bb4")
+    assert_werckmeister3(WERCKMEISTER_III_B4 , 71, "B4")
+    assert_werckmeister3(WERCKMEISTER_III_C5 , 72, "C5")
+    assert_werckmeister3(WERCKMEISTER_III_Db5, 73, "Db5")
+    assert_werckmeister3(WERCKMEISTER_III_D5 , 74, "D5")
+end
+
+--  ___ ____ ____ ___ ____     _  _ _ ____ _  _ ___  ____ ____ ____ ____ ____    _ _ _
+--   |  |___ [__   |  [__  .   |_/  | |__/ |\ | |__] |___ |__/ | __ |___ |__/    | | |
+--   |  |___ ___]  |  ___] .   | \_ | |  \ | \| |__] |___ |  \ |__] |___ |  \    | | |
+--
+
+local KIRNBERGER_III_D4  =  588.50
+local KIRNBERGER_III_Eb4 =  619.97
+local KIRNBERGER_III_E4  =  657.95
+local KIRNBERGER_III_F4  =  697.47
+local KIRNBERGER_III_Gb4 =  735.61
+local KIRNBERGER_III_G4  =  784.66
+local KIRNBERGER_III_Ab4 =  827.57
+local KIRNBERGER_III_A4  =  880.00
+local KIRNBERGER_III_Bb4 =  929.96
+local KIRNBERGER_III_B4  =  983.87
+local KIRNBERGER_III_C5  = 1046.20
+local KIRNBERGER_III_Db5 = 1103.42
+local KIRNBERGER_III_D5  = 1176.99
+
+-- calculate_frequency(note, tuning_note, tuning_frequency)
+
+local function assert_kirnberger3(expected_hz, note, message)
+    test_log("Calculating Kirnberger III for note "..note)
+    local actual_hz = kirnberger3_frequency(note)
+    assert(is_almost(actual_hz, expected_hz), "Kirnberger III "..message..": Expected "..expected_hz.."Hz, but got "..actual_hz.."Hz")
+    test_log("Verified Kirnberger III frequency "..expected_hz.." for "..message)
+end
+
+local function test_kirnberger3_frequencies()
+    assert_kirnberger3(KIRNBERGER_III_D4 , 62, "D4")
+    assert_kirnberger3(KIRNBERGER_III_Eb4, 63, "Eb4")
+    assert_kirnberger3(KIRNBERGER_III_E4 , 64, "E4")
+    assert_kirnberger3(KIRNBERGER_III_F4 , 65, "F4")
+    assert_kirnberger3(KIRNBERGER_III_Gb4, 66, "Gb4")
+    assert_kirnberger3(KIRNBERGER_III_G4 , 67, "G4")
+    assert_kirnberger3(KIRNBERGER_III_Ab4, 68, "Ab4")
+    assert_kirnberger3(KIRNBERGER_III_A4 , 69, "A4")
+    assert_kirnberger3(KIRNBERGER_III_Bb4, 70, "Bb4")
+    assert_kirnberger3(KIRNBERGER_III_B4 , 71, "B4")
+    assert_kirnberger3(KIRNBERGER_III_C5 , 72, "C5")
+    assert_kirnberger3(KIRNBERGER_III_Db5, 73, "Db5")
+    assert_kirnberger3(KIRNBERGER_III_D5 , 74, "D5")
 end
 
 --  ___ ____ ____ ___ ____     ___  _   _ ___ _  _ ____ ____ ____ ____ ____ ____ _  _
@@ -437,7 +583,7 @@ local function test_find_lines_of_interest_minimum()
         lines = {}
     }
     patterns[1].tracks[1].lines[1] = { note_columns = {} }
-    patterns[1].tracks[1].lines[1].note_columns[1] = { note_value = 52, note_string = "E3", volume_value = 80 }
+    patterns[1].tracks[1].lines[1].note_columns[1] = { note_value = 40, note_string = "E2", volume_value = 80 }
     patterns[1].tracks[1].lines[1].note_columns[2] = { note_value = 55, note_string = "G3", volume_value = 80 }
     patterns[1].tracks[1].lines[1].note_columns[3] = { note_value = 57, note_string = "A3", volume_value = 80 }
     patterns[1].tracks[1].lines[2] = { note_columns = {} }
@@ -445,7 +591,7 @@ local function test_find_lines_of_interest_minimum()
     patterns[1].tracks[1].lines[2].note_columns[2] = { note_value = nil }
     patterns[1].tracks[1].lines[2].note_columns[3] = { note_value = nil }
     patterns[1].tracks[1].lines[3] = { note_columns = {} }
-    patterns[1].tracks[1].lines[3].note_columns[1] = { note_value = 53, note_string = "F3", volume_value = 80 }
+    patterns[1].tracks[1].lines[3].note_columns[1] = { note_value = 52, note_string = "E3", volume_value = 80 }
     patterns[1].tracks[1].lines[3].note_columns[2] = { note_value = nil }
     patterns[1].tracks[1].lines[3].note_columns[3] = { note_value = nil }
     patterns[2] = {
@@ -457,13 +603,13 @@ local function test_find_lines_of_interest_minimum()
         lines = {}
     }
     patterns[2].tracks[1].lines[1] = { note_columns = {} }
-    patterns[2].tracks[1].lines[1].note_columns[1] = { note_value = 52, note_string = "E3", volume_value = 80 }
+    patterns[2].tracks[1].lines[1].note_columns[1] = { note_value = 64, note_string = "E4", volume_value = 80 }
     patterns[2].tracks[1].lines[1].note_columns[2] = { note_value = nil }
     patterns[2].tracks[1].lines[1].note_columns[3] = { note_value = nil }
     patterns[2].tracks[1].lines[2] = { note_columns = {} }
     patterns[2].tracks[1].lines[2].note_columns[1] = { note_value = 53, note_string = "F3", volume_value = 80 }
     patterns[2].tracks[1].lines[2].note_columns[2] = { note_value = 67, note_string = "G4", volume_value = 80 }
-    patterns[2].tracks[1].lines[2].note_columns[3] = { note_value = nil }
+    patterns[2].tracks[1].lines[2].note_columns[3] = { note_value = 67, note_string = "G4", volume_value = 80 }
     patterns[2].tracks[1].lines[3] = { note_columns = {} }
     patterns[2].tracks[1].lines[3].note_columns[1] = { note_value = 52, note_string = "E3", volume_value = 80 }
     patterns[2].tracks[1].lines[3].note_columns[2] = { note_value = 55, note_string = "G3", volume_value = 80 }
@@ -532,39 +678,37 @@ local function test_find_lines_of_interest_minimum()
     song.sequencer.pattern_sequence[4] = 4
 
     local sequence_index = song.selected_sequence_index
-    local pattern_index = song.sequencer.pattern_sequence[sequence_index]
     local track_index = song.selected_track_index
-    local pattern_track = song.patterns[pattern_index].tracks[track_index]
     local line_index = song.transport.edit_pos.line
-    local track = song.tracks[track_index]
     local position = position_key(sequence_index, line_index)
     local lines = find_lines_of_interest(song, track_index, position)
     local count, first, last = line_statistics(lines)
 
     assert(count == MAX_LINES, "Expected "..MAX_LINES..", but got "..count.." lines")
     assert(first.sequence == 1 and first.line == 1, "Expected first sequence/ line to be 1/1, but got "..dump(first))
-    assert(last.sequence == 3 and last.line == 3, "Expected last sequence/ line to be 3/3, but got "..dump(last))
+    assert(last.sequence == 2 and last.line == 2, "Expected last sequence/ line to be 3/3, but got "..dump(last))
     test_log("Successfully verified search for lines of interest (minimum)")
 
-    local view = create_condensed_view(song, lines)
+    local view = create_view(song, lines)
+    assert(view.complete == true, "Expected view contain a complete set of notes")
 
-    assert_vertical_interval(view.notes, 1  , 1, 1)
+    assert_vertical_interval(view.notes,  12, 1, 1)
     assert_vertical_interval(view.notes, nil, 1, 2)
     assert_vertical_interval(view.notes, nil, 1, 3)
 
-    assert_vertical_interval(view.notes, 0  , 2, 1)
-    assert_vertical_interval(view.notes, 12 , 2, 2)
+    assert_vertical_interval(view.notes,  12, 2, 1)
+    assert_vertical_interval(view.notes,  nil, 2, 2)
     assert_vertical_interval(view.notes, nil, 2, 3)
 
-    assert_vertical_interval(view.notes, -1 , 3, 1)
-    assert_vertical_interval(view.notes, -12, 3, 2)
-    assert_vertical_interval(view.notes, -12, 3, 3)
+    assert_vertical_interval(view.notes, -11, 3, 1)
+    assert_vertical_interval(view.notes,  12, 3, 2)
+    assert_vertical_interval(view.notes,  10, 3, 3)
 
     assert_vertical_interval(view.notes, nil, 4, 1)
     assert_vertical_interval(view.notes, nil, 4, 2)
     assert_vertical_interval(view.notes, nil, 4, 3)
 
-    assert_horizontal_interval(view.notes, 3  , 1, 1)
+    assert_horizontal_interval(view.notes, 15 , 1, 1)
     assert_horizontal_interval(view.notes, 2  , 1, 2)
     assert_horizontal_interval(view.notes, nil, 1, 3)
 
@@ -572,24 +716,18 @@ local function test_find_lines_of_interest_minimum()
     assert_horizontal_interval(view.notes, nil, 2, 2)
     assert_horizontal_interval(view.notes, nil, 2, 3)
 
-    assert_horizontal_interval(view.notes, 14 , 3, 1)
+    assert_horizontal_interval(view.notes, nil, 3, 1)
     assert_horizontal_interval(view.notes, nil, 3, 2)
     assert_horizontal_interval(view.notes, nil, 3, 3)
 
-    assert_horizontal_interval(view.notes, 3  , 4, 1)
-    assert_horizontal_interval(view.notes, -10, 4, 2)
+    assert_horizontal_interval(view.notes,  14, 4, 1)
+    assert_horizontal_interval(view.notes,   0, 4, 2)
     assert_horizontal_interval(view.notes, nil, 4, 3)
 
     check_counterpoint(view)
     test_log("Counterpoint: "..dump(view.counterpoint))
-    assert(view.counterpoint.details == "12-12 ", "Expected 12-12, but got ".. view.counterpoint.details)
+    assert(view.counterpoint.details == "12-12 12-12 ", "Expected 12-12 12-12, but got ".. view.counterpoint.details)
 
-    --test_log("View: "..dump(view.view))
-  --  for i1, v1 in ipairs(view.view) do
-   --     for i2, v2 in ipairs(v1) do
-    --        test_log("View at "..i1.."/"..i2..": "..dump(v2.horizontal))
-     --   end
-    --end
 end
 
 -- This test is expected to find intervals for each column right away with the first two rows
@@ -727,6 +865,9 @@ test_order_comparison()
 test_volume_percentage()
 test_schildkraut()
 test_equal_temperament()
+test_sixth_comma_frequencies()
+test_kirnberger3_frequencies()
+test_werckmeister3_frequencies()
 test_pythagorean_frequencies()
 test_pythagorean_wolf_fifth()
 test_pure_intervals()

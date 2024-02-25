@@ -27,7 +27,7 @@ function configuration_section(vb, settings, data)
                                 update_interface(vb, settings, data)
                             end },
                 vb:popup { id = ID_SETTINGS_TUNING,
-                           width = SETTINGS_WIDTH * 3,
+                           width = SETTINGS_WIDTH * 2.5,
                            bind = settings.tuning,
                            notifier = function(new_index)
                                settings.tuning.value = new_index
@@ -52,15 +52,25 @@ function configuration_section(vb, settings, data)
                            end },
                 vb:space { width = 5 },
                 vb:text { id = ID_SETTINGS_CHORD_CALC,
-                          width = SETTINGS_WIDTH,
+                          width = SETTINGS_WIDTH / 1.25,
                           text = "???" },
                 vb:checkbox { id = ID_SETTINGS_CHORD_CALC_BOX,
                               bind = settings.chord_calculation,
-                              width = 15,
+                              width = 13,
                               notifier = function(new_index)
                                   update_interface(vb, settings, data)
                               end },
-                vb:space { width = 20 },
+                vb:space { width = 5 },
+                vb:text { id = ID_SETTINGS_SKIP_EMPTY,
+                          width = SETTINGS_WIDTH,
+                          text = "???" },
+                vb:checkbox { id = ID_SETTINGS_SKIP_EMPTY_BOX,
+                              bind = settings.skip_empty_compact,
+                              width = 13,
+                              notifier = function(new_index)
+                                  update_interface(vb, settings, data)
+                              end },
+                vb:space { width = 10 },
                 vb:text { id = ID_SETTINGS_REOPEN_NOTE, text = "???" }
         },
         vb:column {
