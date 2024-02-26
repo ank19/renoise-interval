@@ -374,6 +374,10 @@ function update_interface(vb, settings, data)
         get_view(vb, ID_SETTINGS_PITCH_VALUE            ).active = false
         get_view(vb, ID_SETTINGS_HEARING_THRESHOLD_VALUE).active = false
         get_view(vb, ID_SETTINGS_TUNING_NOTE            ).active = false
+    elseif settings.tuning.value == 2 then
+        get_view(vb, ID_SETTINGS_PITCH_VALUE            ).active = true
+        get_view(vb, ID_SETTINGS_HEARING_THRESHOLD_VALUE).active = true
+        get_view(vb, ID_SETTINGS_TUNING_NOTE            ).active = false
     else
         get_view(vb, ID_SETTINGS_PITCH_VALUE            ).active = true
         get_view(vb, ID_SETTINGS_HEARING_THRESHOLD_VALUE).active = true
