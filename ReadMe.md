@@ -11,16 +11,34 @@ This plugin for [renoise](https://www.renoise.com)(tm), which is a [music tracke
 - displays **emotional effects** for intervals between 0 and 12 halftones
 - calculates **cents** for intervals
 
-The main design objectives for this plugin is to aid musical composition training in
+The main design objectives for this plugin are to aid musical composition training in
 general as well as to compensate for lack of ear training.
 
-Currently, English and German language are supported.
+Currently, English and German languages are supported.
 
 In addition to the features above, a rudimentary detection of a few counterpoint violations
 is available and will be indicated in the status bar at the bottom of the analysis window.
 - Consecutive fifths
 - Consecutive octaves
-- Fifth - fourth - fifth 
+- Fifth - fourth - fifth
+
+## Example use cases
+
+- Checking for unwanted dissonances in a composition 
+- Training of musical composition
+- Optimizing a synthesizer settings like tuning, etc.
+
+Concerning the latter, assuming the arbitrary notes A-3, C#-4, B-3, A-4 and F-5,
+the consonance values for equal temperament would be
+
+<img src='images/Screenshot5.png' width='100'>
+
+Switching from equal temperament to Kirnberger III tuning on F, the consonance values
+would be
+
+<img src='images/Screenshot6.png' width='100'>
+
+The consonance value for A-4 to F-5 were significantly improved. 
 
 ## Consonance Value
 
