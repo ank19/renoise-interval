@@ -197,9 +197,10 @@ counterpoint_texts[COUNTERPOINT_PATTERN_VIOLATION] = {}
 counterpoint_texts[COUNTERPOINT_PATTERN_VIOLATION]["de"] = "Kontrapunkt:  Ungültiges Intervallmuster: "
 counterpoint_texts[COUNTERPOINT_PATTERN_VIOLATION]["en"] = "Counterpoint: Pattern violation: "
 
-local function get_view(vb, id)
+local function get_view(vb, id, ignore_unknown)
+    ignore_unknown = ignore_unknown or false
     local view = vb.views[id]
-    if not view then
+    if not view and not ignore_unknown then
         local error_text = "Unknown view element: '"..id.."'"
         renoise.app():show_message(error_text)
         error(error_text)
@@ -207,12 +208,18 @@ local function get_view(vb, id)
     return view
 end
 
-local function update_text(vb, id, text)
-    get_view(vb, id).text = text
+local function update_text(vb, id, text, ignore_unknown)
+    local view = get_view(vb, id, ignore_unknown)
+    if view then
+        view.text = text
+    end
 end
 
-local function update_color(vb, id, color)
-    get_view(vb, id).color = color
+local function update_color(vb, id, color, ignore_unknown)
+    local view = get_view(vb, id, ignore_unknown)
+    if view then
+        view.color = color
+    end
 end
 
 local function update_items(vb, id, items)
@@ -337,16 +344,10 @@ function update_interface(vb, settings, data)
     if counterpoint and counterpoint.code then
         counterpoint_text = counterpoint_texts[counterpoint.code][language]..counterpoint.details
         update_color(vb, ID_COUNTERPOINT_BAR, COLOR_STATUS_WARNING)
-        update_text (vb, ID_COUNTERPOINT_BAR, counterpoint_text)
-    else
-        if vb.views[ID_COUNTERPOINT_BAR] then
-            update_color(vb, ID_COUNTERPOINT_BAR, COLOR_DEFAULT)
-            update_text (vb, ID_COUNTERPOINT_BAR, "---")
-        end
+        update_text (vb, ID_COUNTERPOINT_BAR, counterpoint_text, true)
     end
 
-    update_text    (vb, ID_STATUS_BAR                   , status_text)
-
+    update_text(vb, ID_STATUS_BAR, status_text, true)
 
     if chords_displayed(vb, data, settings) then
         update_text(vb, ID_HEADER_CHORD_ACTUAL          , chord_header_actual      [language][dialog_type])
