@@ -88,7 +88,7 @@ DISSONANCE_COLORS = {COLOR_DISSONANCE_1, COLOR_DISSONANCE_2, COLOR_DISSONANCE_3,
 COLOR_DEFAULT = {0x90, 0x90, 0x90}
 COLOR_BLACK   = {0x00, 0x00, 0x00}
 
-COLOR_STATUS_WARNING = {0xB0, 0x40, 0x00}
+COLOR_STATUS_WARNING = {0xFF, 0x30, 0x00}
 
 --   _______ _____ ______ _______ _______
 --   |______   |    ____/ |______ |______

@@ -130,8 +130,20 @@ settings_interval["de"] = {"Sonanz" , "Intervall", "Effekt", "Cents"}
 settings_interval["en"] = {"Sonance", "Interval" , "Effect", "Cents"}
 
 settings_tuning = {}
-settings_tuning["de"] = {"Reine Intervalle", "Gleichstufig"     ,"Pythagoreisch", "Kirnberger III", "1/6 Mitteltönig"}
-settings_tuning["en"] = {"Pure intervals"  , "Equal temperament","Pythagorean"  , "Kirnberger III", "1/6 Meantone"}
+settings_tuning["de"] = {
+    "Reine Intervalle",
+    "Gleichstufig",
+    "Pythagoreisch",
+    "Kirnberger III",
+    "Werckmeister III",
+    "1/6 Mitteltönig"}
+settings_tuning["en"] = {
+    "Pure intervals",
+    "Equal temperament",
+    "Pythagorean",
+    "Kirnberger III",
+    "Werckmeister III",
+    "1/6 Meantone"}
 
 settings_tuning_note = {}
 settings_tuning_note["de"] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "H"}

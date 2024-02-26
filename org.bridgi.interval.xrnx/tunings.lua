@@ -205,6 +205,6 @@ TUNING = {
     equal_interval,
     pythagorean_interval,
     kirnberger3_interval,
-    werckmesiter3_interval,
+    werckmeister3_interval,
     sixth_comma_interval
 }

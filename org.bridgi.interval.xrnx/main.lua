@@ -151,25 +151,40 @@ local function get_lines(song, position)
     return lines
 end
 
--- Backward search for notes which might be part of an interval considering the current cursor position
-local function look_back(song, lines_seen, track_index, position, column, delta, take_all)
+-- Search for lines of interest in various directions
+local function look(song, lines_seen, track_index, position, column, delta, take_all, direction)
+    assert(direction == -1 or direction == 1 or direction == 0)
     local sequence_index = position.sequence
-    local line_index     = position.line - 1
+    local line_index     = position.line + direction
     local pattern_index  = song.sequencer.pattern_sequence[position.sequence]
     local pattern_track  = song.patterns[pattern_index].tracks[track_index]
-    local n              = 1
     delta = delta and delta or 0
-    if not take_all then
-        take_all = false
+    if not take_all then take_all = false end
+    if direction == 0 then
+        local line = pattern_track.lines[position.line]
+        if is_note(line.note_columns[column].note_value) or take_all then
+            lines_seen[position] = { lines = get_lines(song, position), delta = 0 }
+            return { position = position, lines = lines_seen[position] }, lines_seen
+        else
+            return nil, lines_seen
+        end
     end
+    local n = 1
     repeat
-        if line_index < 1 and sequence_index - 1 > 0 then
+        local lines_count     = song.patterns[song.sequencer.pattern_sequence[sequence_index]].number_of_lines
+        local sequences_count = table.getn(song.sequencer.pattern_sequence)
+        if direction > 0 and line_index > lines_count and sequence_index < sequences_count then
+            sequence_index = sequence_index + 1
+            local next_pattern = song.patterns[song.sequencer.pattern_sequence[sequence_index]]
+            pattern_track = next_pattern.tracks[track_index]
+            line_index = 1
+        elseif direction < 0 and line_index < 1 and sequence_index - 1 > 0 then
             sequence_index = sequence_index - 1
             local prev_pattern = song.patterns[song.sequencer.pattern_sequence[sequence_index]]
             pattern_track = prev_pattern.tracks[track_index]
             line_index = prev_pattern.number_of_lines
         else
-            if line_index < 1 or n + delta > settings_delta().value then
+            if line_index > lines_count or line_index < 1 or n + delta > settings_delta().value then
                 return nil, lines_seen
             end
         end
@@ -181,61 +196,9 @@ local function look_back(song, lines_seen, track_index, position, column, delta,
                 return { position = key, lines = lines_seen[key] }, lines_seen
             end
         end
-        line_index = line_index - 1
+        line_index = line_index + direction
         n = n + 1
     until false
-end
-
--- Forward search for notes which might be part of an interval considering the current cursor position
-local function look_after(song, lines_seen, track_index, position, column, delta, take_all)
-    local sequence_index = position.sequence
-    local line_index     = position.line + 1
-    local pattern_index  = song.sequencer.pattern_sequence[position.sequence]
-    local pattern_track  = song.patterns[pattern_index].tracks[track_index]
-    local n              = 1
-    delta = delta and delta or 0
-    if not take_all then
-        take_all = false
-    end
-    repeat
-        local lines_count     = song.patterns[song.sequencer.pattern_sequence[sequence_index]].number_of_lines
-        local sequences_count = table.getn(song.sequencer.pattern_sequence)
-        if line_index > lines_count and sequence_index < sequences_count then
-            sequence_index = sequence_index + 1
-            local next_pattern = song.patterns[song.sequencer.pattern_sequence[sequence_index]]
-            pattern_track = next_pattern.tracks[track_index]
-            line_index = 1
-        else
-            if line_index > lines_count or n + delta > settings_delta().value then
-                return nil, lines_seen
-            end
-        end
-        local line = pattern_track.lines[line_index]
-        if has_note(song, line, track_index) or take_all then
-            local key = position_key(sequence_index, line_index)
-            lines_seen[key] = { lines = get_lines(song, key), delta = n + delta}
-            if (column and is_note(line.note_columns[column].note_value)) or not column or take_all then
-                return { position = key, lines = lines_seen[key] }, lines_seen
-            end
-        end
-        line_index = line_index + 1
-        n = n + 1
-    until false
-end
-
-local function look_current(song, lines_seen, track_index, position, column, delta, take_all)
-    local pattern_index = song.sequencer.pattern_sequence[position.sequence]
-    local pattern_track = song.patterns[pattern_index].tracks[track_index]
-    local line          = pattern_track.lines[position.line]
-    if not take_all then
-        take_all = false
-    end
-    if is_note(line.note_columns[column].note_value) or take_all then
-        lines_seen[position] = { lines = get_lines(song, position), delta = 0 }
-        return { position = position, lines = lines_seen[position] }, lines_seen
-    else
-        return nil, lines_seen
-    end
 end
 
 -- Just creates a sorted hash set
@@ -325,7 +288,7 @@ function add_lines(song, lines_seen, lines_of_interest, track_index, position, t
             if b then
                 for i = 0, settings_tracks().value - 1 do
                     if b then
-                        b, lines_seen = look_back(song, lines_seen, track_index + i, b.position, nil, delta_b, take_all)
+                        b, lines_seen = look(song, lines_seen, track_index + i, b.position, nil, delta_b, take_all, -1)
                     end
                     if b then break end
                 end
@@ -336,7 +299,7 @@ function add_lines(song, lines_seen, lines_of_interest, track_index, position, t
             if a then
                 for i = 0, settings_tracks().value - 1 do
                     if a then
-                        a, lines_seen = look_after(song, lines_seen, track_index + i, a.position, nil, delta_a, take_all)
+                        a, lines_seen = look(song, lines_seen, track_index + i, a.position, nil, delta_a, take_all, 1)
                     end
                     if a then break end
                 end
@@ -357,7 +320,7 @@ function find_lines(song, track_index, position)
     for i = 0, settings_tracks().value - 1 do
         local column_count = get_visible_columns(song, track_index + i)
         for j = 1, column_count do
-            line, lines_seen = look_current(song, lines_seen, track_index + i, position, j)
+            line, lines_seen = look(song, lines_seen, track_index + i, position, j, nil, false, 0)
             if line then
                 lines_of_interest[line.position] = line.lines
             end
@@ -382,9 +345,9 @@ function find_lines_of_interest(song, track_index, position)
             local track_measures = measures[track_index + i]
             local column_measures = track_measures.columns[j]
             if not column_measures.covered then
-                c, lines_seen = look_current(song, lines_seen, track_index + i, position, j)
-                b, lines_seen = look_back   (song, lines_seen, track_index + i, position, j)
-                a, lines_seen = look_after  (song, lines_seen, track_index + i, position, j)
+                c, lines_seen = look(song, lines_seen, track_index + i, position, j, nil, false,  0)
+                b, lines_seen = look(song, lines_seen, track_index + i, position, j, nil, false, -1)
+                a, lines_seen = look(song, lines_seen, track_index + i, position, j, nil, false,  1)
                 if c and (b or a) then lines_of_interest[c.position] = c.lines end
                 if max_lines_reached(lines_of_interest) then break end
                 if b and (c or a) then lines_of_interest[b.position] = b.lines end
