@@ -21,6 +21,7 @@ is available and will be indicated in the status bar at the bottom of the analys
 - Consecutive fifths
 - Consecutive octaves
 - Fifth - fourth - fifth
+- Leaps not followed by counter-movement in seconds (>=+7~-1|2 or >=-7~+1|2)
 
 ## Example use cases
 
