@@ -726,7 +726,7 @@ local function test_find_lines_of_interest_minimum()
 
     check_counterpoint(view)
     test_log("Counterpoint: "..dump(view.counterpoint))
-    assert(view.counterpoint.details == "12-12 12-12 ", "Expected 12-12 12-12, but got ".. view.counterpoint.details)
+    assert(view.counterpoint.details == "12-12 ", "Expected '12-12', but got '"..view.counterpoint.details.."'")
 
 end
 

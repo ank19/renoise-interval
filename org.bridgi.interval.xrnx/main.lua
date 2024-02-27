@@ -601,35 +601,94 @@ function check_counterpoint(data)
     local fifths  = {}
     local fourths = {}
     local octaves = {}
+    local leaps   = {}
+    local seconds = {}
     local violations = ""
+
+    local function leap_direction(n)
+        return n > 0 and 1 or n < 0 and -1 or false
+    end
+
     for row = 1, row_count do
-        local has_fifth  = false
-        local has_fourth = false
-        local has_octave = false
+        leaps  [row] = nil
+        seconds[row] = nil
+        fifths [row] = nil
+        fourths[row] = nil
+        octaves[row] = nil
         for column = 1, #notes[row] do
             local t = notes[row][column].vertical
             if type(t) == 'table' then
-                if t.interval ==  5 then has_fourth = true end
-                if t.interval ==  7 then has_fifth  = true end
-                if t.interval == 12 then has_octave = true end
+                local halftones = math.abs(t.halftones)
+                fourths[row] = t.interval ==  5 -- also considers 11th, .. as fourths
+                fifths [row] = t.interval ==  7 -- also considers 12th, .. as fifths
+                octaves[row] = t.interval == 12 -- also considers 19th, .. as octaves
+                leaps  [row] = (halftones >= 7                  ) and leap_direction(t.halftones) or false
+                seconds[row] = (halftones == 1 or halftones == 2) and leap_direction(t.halftones) or false
             end
         end
-        fourths[row] = has_fourth
-        fifths [row] = has_fifth
-        octaves[row] = has_octave
     end
+
+    local previous
+    previous = function(t, i)
+        if t[i] ~= nil then
+            return i, t[i]
+        elseif i > 1 then
+            return previous(t, i - 1)
+        else
+            return nil, nil
+        end
+    end
+
+    local next
+    next = function(t, i, rows)
+        if t[i] ~= nil then
+            return i, t[i]
+        elseif i < rows then
+            return next(t, i + 1, rows)
+        else
+            return nil, nil
+        end
+    end
+
+    local consecutive
+    consecutive = function(t1, t2, i, f)
+        if t1[i] then
+            local j, v = f(t2, i - 1)
+            if v then
+                return j
+            end
+        end
+        return nil
+    end
+
     for row = 2, row_count do
-        if fifths [row] and fifths [row - 1] then violations = violations.."5-5 "   end
-        if octaves[row] and octaves[row - 1] then violations = violations.."12-12 " end
+        if consecutive(fifths , fifths , row, previous) then violations = violations.."5-5 "   end
+        if consecutive(octaves, octaves, row, previous) then violations = violations.."12-12 " end
     end
+
     for row = 3, row_count do
-        if fifths[row] and fourths[row - 1] and fifths[row - 2] then violations = violations.."5-4-5 " end
+        local i = consecutive(fifths, fourths, row, previous)
+        if i and i > 1 then
+            if consecutive(fourths, fifths, i, previous) then violations = violations.."5-4-5 " end
+        end
     end
+
+    for row = 1, row_count - 1 do
+        if leaps[row] == 1 then
+            local _, v = next(seconds, row + 1, row_count)
+            if not v or v ~= -1 then violations = violations..">=+7~-1|2 " end
+        elseif leaps[row] == -1 then
+            local _, v = next(seconds, row + 1, row_count)
+            if not v or v ~=  1 then violations = violations..">=-7~+1|2 " end
+        end
+    end
+
     if violations ~= "" then
         data.counterpoint = { code = COUNTERPOINT_PATTERN_VIOLATION, details = violations }
     else
         data.counterpoint = {}
     end
+
     return data
 end
 
