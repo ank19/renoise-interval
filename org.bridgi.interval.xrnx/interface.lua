@@ -15,7 +15,7 @@ local ELEMENT_HEIGHT  = 20
 local FULL_HD_WIDTH   = 1920
 local SETTINGS_WIDTH  = 50
 
-function configuration_section(vb, settings, data)
+function configuration_section(vb, settings, data, dialog_type)
     return
         vb:column {
            vb:row {
@@ -56,7 +56,7 @@ function configuration_section(vb, settings, data)
                           text = "???" },
                 vb:checkbox { id = ID_SETTINGS_CHORD_CALC_BOX,
                               bind = settings.chord_calculation,
-                              width = 13,
+                              width = 16,
                               notifier = function(new_index)
                                   update_interface(vb, settings, data)
                               end },
@@ -66,7 +66,7 @@ function configuration_section(vb, settings, data)
                           text = "???" },
                 vb:checkbox { id = ID_SETTINGS_SKIP_EMPTY_BOX,
                               bind = settings.skip_empty_compact,
-                              width = 13,
+                              width = 16,
                               notifier = function(new_index)
                                   update_interface(vb, settings, data)
                               end },

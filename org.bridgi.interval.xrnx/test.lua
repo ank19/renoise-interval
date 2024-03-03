@@ -281,8 +281,6 @@ local SIXTH_COMMA_C5  = 1049.46
 local SIXTH_COMMA_Db5 = 1104.56
 local SIXTH_COMMA_D5  = 1175.77
 
--- calculate_frequency(note, tuning_note, tuning_frequency)
-
 local function assert_sixth_comma(expected_hz, note, message)
     test_log("Calculating Sixth Comma for note "..note)
     local actual_hz = sixth_comma_frequency(note)
