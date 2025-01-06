@@ -75,7 +75,7 @@ COLOR_HEADER_2 = {0x50, 0x50, 0x50}
 COLOR_DISSONANCE_X = {0x00, 0x0F, 0x00}
 COLOR_DISSONANCE_1 = {0x20, 0x5F, 0x20}
 COLOR_DISSONANCE_2 = {0x20, 0x3F, 0x20}
-COLOR_DISSONANCE_3 = {0x5F, 0x2F, 0x10}
+COLOR_DISSONANCE_3 = {0x6F, 0x4F, 0x10}
 COLOR_DISSONANCE_4 = {0x7F, 0x20, 0x20}
 
 COLOR_IS_NOTE        = {0x58, 0x58, 0x58}
@@ -89,6 +89,7 @@ COLOR_DEFAULT = {0x90, 0x90, 0x90}
 COLOR_BLACK   = {0x00, 0x00, 0x00}
 
 COLOR_STATUS_WARNING = {0xFF, 0x30, 0x00}
+COLOR_STATUS_WARNING_INTERVAL = {0xB6, 0x60, 0xCD}
 
 --   _______ _____ ______ _______ _______
 --   |______   |    ____/ |______ |______
@@ -118,6 +119,7 @@ ID_SETTINGS_SEARCH_ROWS             = "settings_search_rows"
 ID_SETTINGS_MATRIX_SIZE             = "settings_matrix_size"
 ID_SETTINGS_DEBUG                   = "settings_debug"
 ID_ELEMENT                          = "element"
+ID_SEPARATOR                        = "separator"
 ID_STATUS_BAR                       = "status_bar"
 ID_COUNTERPOINT_BAR                 = "counterpoint_bar"
 ID_SETTINGS_CHORD_CALC              = "chord_calculation"

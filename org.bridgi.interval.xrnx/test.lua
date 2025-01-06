@@ -724,8 +724,8 @@ local function test_find_lines_of_interest_minimum()
 
     check_counterpoint(view)
     test_log("Counterpoint: "..dump(view.counterpoint))
-    assert(view.counterpoint.details == "12-12 ", "Expected '12-12', but got '"..view.counterpoint.details.."'")
-
+    assert(view.notes[1][1].vertical.violations == "8-8\n>=+7 ~-1|2", "Expected '8-8\n>=+7 ~-1|2' at (1,1), but got '"..tostring(view.notes[1][1].vertical.violations).."'")
+    assert(view.notes[2][1].vertical.violations == "8-8\n8-8\n>=+7 ~-1|2", "Expected '8-8\n8-8\n>=+7 ~-1|2' at (2,1), but got '"..tostring(view.notes[2][1].vertical.violations).."'")
 end
 
 -- This test is expected to find intervals for each column right away with the first two rows

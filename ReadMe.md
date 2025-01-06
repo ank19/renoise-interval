@@ -16,7 +16,7 @@ general as well as to compensate for lack of ear training.
 
 Currently, English and German languages are supported.
 
-In addition to the features above, a rudimentary detection of a few counterpoint violations
+In addition to the features above, rudimentary detection of a few counterpoint violations
 is available and will be indicated in the status bar at the bottom of the analysis window.
 - Consecutive fifths
 - Consecutive octaves
@@ -39,7 +39,7 @@ would be
 
 <img src='images/Screenshot6.png' width='100'>
 
-The consonance value for A-4 to F-5 were significantly improved. 
+The consonance value for A-4 to F-5 was significantly improved. 
 
 ## Consonance Value
 
@@ -62,7 +62,7 @@ if no note lines are left out.
 
 ## Example
 
-As an example let's assume eight notes selected from the Moonlight Sonata as shown in the
+As an example, let's assume eight notes selected from the Moonlight Sonata as shown in the
 first screenshot from renoise(tm) below. The selection itself does not affect which notes
 are considered for the analysis. The position of the edit cursor is taken as reference.
 The selection is only for illustrative purposes.
@@ -76,7 +76,7 @@ tool for quick access. The corresponding entry in renoise(tm) can be found under
 
 ![Screenshot1](images/Screenshot1.png)
 
-In the upper left corner there is a possibility to switch between the features mentioned
+In the upper left corner, there is a possibility to switch between the features mentioned
 above. In the case of the consonance value (abbreviated as "sonance"), the picture is as
 shown in the third screenshot.
 
@@ -96,11 +96,11 @@ higher dissonance of 18.17 instead of 2.45.
 ## A Note about Tuning
 
 Due to the nature of the calculation of the consonance value, the irrational numbers of
-the equal temperament cannot be used, therefore the frequency ratios are approximated
-as described by Frieder Stolzenburg (see references). The hearing threshold, which can
-be configured in the settings, can be used to fine-tune the approximation.
+the equal temperament cannot be used.
+Therefore, the frequency ratios are approximated as described by Frieder Stolzenburg (see references).
+The hearing threshold, which can be configured in the settings, can be used to fine-tune the approximation.
 
-For the Pythagorean tuning the same approximation is used, based on frequencies derived
+For the Pythagorean tuning, the same approximation is used, based on frequencies derived
 from the pitch level and the tuning note. The hearing threshold is also considered when
 calculating the ratios.
 
@@ -111,23 +111,23 @@ account, no pitch, no tuning note, no hearing threshold.
 
 | View      | Purpose  | Lines might be omitted                                          | Limitations                                                                    | Approximate max. size (4k, 200% scaling) |
 |-----------|----------|-----------------------------------------------------------------|--------------------------------------------------------------------------------|------------------------------------------|
-| Condensed | Excerpt  | Yes (prioritizing having at least one interval for each column) | If lines omitted: Counterpoint, effect display, lingering chords not available | 12 note columns x 8 rows                 |
-| Compact   | Overview | No                                                              | None                                                                           | 24 note columns x 24 rows                |
+| Condensed | Excerpt  | Yes (prioritizing having at least one interval for each column) | If lines omitted: Counterpoint, effect display, lingering chords not available | 13 note columns x 8 rows                 |
+| Compact   | Overview | No                                                              | None                                                                           | 23 note columns x 24 rows                |
 
-As I have no idea how to get either the scaling factor or the current window size and it's not possible to set relative
-sizes on top elements, the hard-coded sizes are best-effort estimations. If you experience issues, pls. let me know. 
+As I have no idea how to get either the scaling factor or the current window size, and it's not possible to set relative
+sizes on top elements, the hard-coded sizes are best-effort estimations. If you experience issues, please let me know. 
 
 ## Settings
 
-The fist setting is the type of the view, representing the different features outline
+The fist setting is the type of the view, representing the different features outlined
 above. Furthermore, the tuning, the tuning note and the language can be selected.
-Pls. note the  limitations concerning tunings (see below). The sonance thresholds are
+Please note the limitations concerning tunings (see below). The sonance thresholds are
 used to control the colors for displaying the consonance values. The left rotary controls
 the threshold between light green for strong consonance and dark green for imperfect
-consonance, the rotary in the middle then the threshold to slight dissonance and finally,
+consonance, the rotary in the middle then the threshold to slight dissonance, and finally,
 the right rotary the threshold to the strong dissonance.
 
-Furthermore, the hearing threshold can be configured, as outlined in the tuning  chapter
+Furthermore, the hearing threshold can be configured, as outlined in the tuning chapter
 above. Furthermore, the damping factor can be used to fine-tune the calculation of the
 lingering chord. The calculation basically calculates a new volume by taking the original
 volume times the damping factor to the power of the number of note lines, which is equal

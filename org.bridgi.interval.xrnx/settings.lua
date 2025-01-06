@@ -17,11 +17,11 @@ settings = renoise.Document.create("IntervalCalculatorSettings") {
     pitch                  = 440,
     volume_reduction       =   0.20,
     tracks_condensed       =   2,
-    delta_condensed        =  20,
-    lines_condensed        =   8,
+    delta_condensed        =  64,
+    lines_condensed        =  13,
     tracks_compact         =   3,
     delta_compact          =  64,
-    lines_compact          =  24,
+    lines_compact          =  23,
     chord_calculation      = true,
     skip_empty_compact     = true
 }

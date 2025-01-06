@@ -1,6 +1,7 @@
 require 'interface'
 require 'language'
 require 'common'
+require 'counterpoint'
 require 'maths'
 require 'logging'
 require 'metatables'
@@ -420,6 +421,8 @@ function create_view(song, lines_of_interest)
                                 notes[i][j].gaps = true
                                 -- Memorize if there's at least one skipped note
                                 complete = false
+                            else
+                                notes[i][j].gaps = false
                             end
                         end
                     end
@@ -455,20 +458,53 @@ function create_view(song, lines_of_interest)
         for column = 1, #notes[row] do
             view[row * 2 - 1][column * 2 - 1] = { type = "note", note = notes[row][column] }
             if row < #notes then
-                view[row * 2][column * 2 - 1] = { type = "data", data = notes[row][column].vertical }
+                view[row * 2][column * 2 - 1] = { type = "data", data = notes[row][column].vertical, direction = "vertical" }
             end
             if column < #notes[row] then
-                view[row * 2 - 1][column * 2] = { type = "data", data = notes[row][column].horizontal }
+                view[row * 2 - 1][column * 2] = { type = "data", data = notes[row][column].horizontal, direction = "horizontal" }
                 if row < #notes then
                     view[row * 2][column * 2] = { type = "text", text = notes[row][column].delta }
                 end
             end
         end
-        view[row * 2 - 1][#notes[row] * 2 + 0] = { type = "data", data = chords.actual[row] }
-        view[row * 2 - 1][#notes[row] * 2 + 1] = { type = "data", data = chords.linger[row] }
+        view[row * 2 - 1][#notes[row] * 2 + 0] = { type = "data", data = chords.actual[row], direction = "vertical" }
+        view[row * 2 - 1][#notes[row] * 2 + 1] = { type = "data", data = chords.linger[row], direction = "vertical" }
         if row < #notes then
             view[row * 2][#notes[row] * 2 + 0] = { type = "text", text = notes[row][1].delta }
             view[row * 2][#notes[row] * 2 + 1] = { type = "text", text = notes[row][1].delta }
+        end
+    end
+    -- Iterate over the view and determine, if there are two elements of type note, between whose now vertical interval is available
+    for row = 1, #view do
+        for column = 1, #view[row] do
+            if view[row][column].type == "note" and is_note(view[row][column].note.value) then
+                -- Get the index of the next note type in the same column
+                local next_note = nil
+                for i = row + 1, #view do
+                    if view[i][column].type == "note" and is_note(view[i][column].note.value) then
+                        next_note = i
+                        break
+                    end
+                end
+
+                -- If there is a next note, count the number of data elements, which are not null, between the both notes
+                if next_note then
+                    local count = 0
+                    for i = row + 1, next_note - 1 do
+                        if view[i][column].type == "data" and view[i][column].data then
+                            count = count + 1
+                        end
+                    end
+
+                    -- If there is no vertical interval between the notes, mark all data elements between the notes as gaps
+                    local gap_marker = count == 0 and true or false
+                    for i = row + 1, next_note - 1 do
+                        if view[i][column].type == "data" then
+                            view[i][column].gap = gap_marker
+                        end
+                    end
+                end
+            end
         end
     end
     return { measures   = measures,
@@ -585,111 +621,6 @@ function get_chords(notes, complete)
         chord_linger[row].chord = complete and dissect_chord_wrapper(unpack(chord_linger[row])) or {}
     end
     return { actual = chord_actual, linger = chord_linger }
-end
-
---  ____ ____ _  _ _  _ ___ ____ ____ ___  ____ _ _  _ ___
---  |    |  | |  | |\ |  |  |___ |__/ |__] |  | | |\ |  |
---  |___ |__| |__| | \|  |  |___ |  \ |    |__| | | \|  |
-
--- Check for some violations according to the counterpoint (Kontrapunkt) system
-function check_counterpoint(data)
-    if not data.complete then
-        return data
-    end
-    local notes = data.notes
-    local row_count = #notes
-    local fifths  = {}
-    local fourths = {}
-    local octaves = {}
-    local leaps   = {}
-    local seconds = {}
-    local violations = ""
-
-    local function leap_direction(n)
-        return n > 0 and 1 or n < 0 and -1 or false
-    end
-
-    for row = 1, row_count do
-        leaps  [row] = nil
-        seconds[row] = nil
-        fifths [row] = nil
-        fourths[row] = nil
-        octaves[row] = nil
-        for column = 1, #notes[row] do
-            local t = notes[row][column].vertical
-            if type(t) == 'table' then
-                local halftones = math.abs(t.halftones)
-                fourths[row] = t.interval ==  5 -- also considers 11th, .. as fourths
-                fifths [row] = t.interval ==  7 -- also considers 12th, .. as fifths
-                octaves[row] = t.interval == 12 -- also considers 19th, .. as octaves
-                leaps  [row] = (halftones >= 7                  ) and leap_direction(t.halftones) or false
-                seconds[row] = (halftones == 1 or halftones == 2) and leap_direction(t.halftones) or false
-            end
-        end
-    end
-
-    local previous
-    previous = function(t, i)
-        if t[i] ~= nil then
-            return i, t[i]
-        elseif i > 1 then
-            return previous(t, i - 1)
-        else
-            return nil, nil
-        end
-    end
-
-    local next
-    next = function(t, i, rows)
-        if t[i] ~= nil then
-            return i, t[i]
-        elseif i < rows then
-            return next(t, i + 1, rows)
-        else
-            return nil, nil
-        end
-    end
-
-    local consecutive
-    consecutive = function(t1, t2, i, f)
-        if t1[i] then
-            local j, v = f(t2, i - 1)
-            if v then
-                return j
-            end
-        end
-        return nil
-    end
-
-    for row = 2, row_count do
-        if consecutive(fifths , fifths , row, previous) then violations = violations.."5-5 "   end
-        if consecutive(octaves, octaves, row, previous) then violations = violations.."12-12 " end
-    end
-
-    for row = 3, row_count do
-        local i = consecutive(fifths, fourths, row, previous)
-        if i and i > 1 then
-            if consecutive(fourths, fifths, i, previous) then violations = violations.."5-4-5 " end
-        end
-    end
-
-    for row = 1, row_count - 1 do
-        if leaps[row] == 1 then
-            local _, v = next(seconds, row + 1, row_count)
-            if not v or v ~= -1 then violations = violations..">=+7~-1|2 " end
-        elseif leaps[row] == -1 then
-            local _, v = next(seconds, row + 1, row_count)
-            if not v or v ~=  1 then violations = violations..">=-7~+1|2 " end
-        end
-    end
-
-    if violations ~= "" then
-        data.counterpoint = { code = COUNTERPOINT_PATTERN_VIOLATION, details = violations }
-    else
-        data.counterpoint = {}
-    end
-
-    return data
 end
 
 --  _  _ ____ _ _  _
