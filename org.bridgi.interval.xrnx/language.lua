@@ -157,6 +157,120 @@ interval_texts["en"]={"Prime",
                       "Maj. fourteenth",
                       "Fifteenth"}
 
+interval_colors={}
+
+interval_colors["classical"]={
+    {0xFF, 0xFF, 0xFF}, -- 0 Halbtonschritte (Prime): Weiß (Neutralität, Einheit)
+    {0xAA, 0x33, 0x33}, -- 1 Halbton (kleine Sekunde): Dunkelrot (Spannung, Disharmonie)
+    {0xFF, 0x66, 0x66}, -- 2 Halbtöne (große Sekunde): Hellrot (Leichte Spannung, Bewegung)
+    {0xFF, 0xAA, 0x66}, -- 3 Halbtöne (kleine Terz): Orange (Wärme, Nähe)
+    {0xFF, 0xDD, 0x66}, -- 4 Halbtöne (große Terz): Gelb (Helligkeit, Harmonie)
+    {0x66, 0xFF, 0x66}, -- 5 Halbtöne (reine Quarte): Grün (Aufbruch, Stabilität)
+    {0x33, 0x33, 0xFF}, -- 6 Halbtöne (Tritonus): Blau (Spannung, Dunkelheit)
+    {0x66, 0xFF, 0xAA}, -- 7 Halbtöne (reine Quinte): Türkis (Harmonie, Klarheit)
+    {0xFF, 0xCC, 0xFF}, -- 8 Halbtöne (kleine Sexte): Rosa (Melancholie, Sanftheit)
+    {0xFF, 0x99, 0xCC}, -- 9 Halbtöne (große Sexte): Violett (Erhabenheit, Romantik)
+    {0xAA, 0x33, 0x99}, -- 10 Halbtöne (kleine Septime): Dunkelviolett (Spannung, Erwartung)
+    {0x33, 0x00, 0x66}, -- 11 Halbtöne (große Septime): Dunkelblauviolett (Dringlichkeit, Instabilität)
+    {0xFF, 0xFF, 0x00}, -- 12 Halbtöne (Oktave): Gelb (Vollendung, Einheit)
+    {0xFF, 0xAA, 0xFF}, -- 13 Halbtöne (kleine None): Lila (Milde Spannung, Weite)
+    {0xFF, 0xFF, 0x99}, -- 14 Halbtöne (große None): Hellgelb (Leichte Öffnung, Wärme)
+    {0x99, 0xFF, 0x66}, -- 15 Halbtöne (kleine Dezime): Hellgrün (Optimismus, Nähe)
+    {0x66, 0xFF, 0x33}, -- 16 Halbtöne (große Dezime): Intensivgrün (Stabilität, Harmonie)
+    {0x33, 0x99, 0xFF}, -- 17 Halbtöne (reine Undezime): Hellblau (Weite, Offenheit)
+    {0x00, 0x66, 0xFF}, -- 18 Halbtöne (übermäßige Undezime): Tiefblau (Spannung, Sehnsucht)
+    {0xCC, 0x66, 0xFF}, -- 19 Halbtöne (Duodezime): Violett (Erhabenheit, Bewegung)
+    {0x99, 0x33, 0xCC}, -- 20 Halbtöne (kleine Tredezime): Dunkelviolett (Melancholie, Schwere)
+    {0x33, 0x00, 0x99}, -- 21 Halbtöne (große Tredezime): Tiefviolett (Tiefe, Ausdruck)
+    {0x66, 0x33, 0x00}, -- 22 Halbtöne (kleine Quartdezime): Braun (Erdung, Schwere)
+    {0xFF, 0x99, 0x00}, -- 23 Halbtöne (große Quartdezime): Orange (Offenheit, Wärme)
+    {0xFF, 0x66, 0x00}, -- 24 Halbtöne (Quindezime): Tieforange (Energie, Vollendung)
+}
+
+interval_colors["tension"] = {
+    {0xCC, 0xCC, 0xCC}, -- 0 Halbtonschritte (Prime): Hellgrau (Neutralität)
+    {0xFF, 0x00, 0x00}, -- 1 Halbton (kleine Sekunde): Rot (Disharmonie)
+    {0xFF, 0x66, 0x33}, -- 2 Halbtöne (große Sekunde): Orange-Rot (Bewegung)
+    {0xFF, 0x99, 0x00}, -- 3 Halbtöne (kleine Terz): Gold (Wärme)
+    {0xFF, 0xFF, 0x00}, -- 4 Halbtöne (große Terz): Gelb (Strahlkraft)
+    {0x33, 0xCC, 0x33}, -- 5 Halbtöne (reine Quarte): Grün (Stabilität)
+    {0x00, 0x00, 0x99}, -- 6 Halbtöne (Tritonus): Dunkelblau (Spannung)
+    {0x33, 0xFF, 0xFF}, -- 7 Halbtöne (reine Quinte): Cyan (Reinheit)
+    {0xFF, 0x99, 0xFF}, -- 8 Halbtöne (kleine Sexte): Rosa (Sanftheit)
+    {0xCC, 0x33, 0x99}, -- 9 Halbtöne (große Sexte): Purpur (Erhabenheit)
+    {0x99, 0x00, 0x33}, -- 10 Halbtöne (kleine Septime): Tiefrot (Spannung)
+    {0x00, 0x33, 0x66}, -- 11 Halbtöne (große Septime): Dunkelblau-Grün (Instabilität)
+    {0xCC, 0xCC, 0x00}, -- 12 Halbtöne (Oktave): Dunkelgelb (Vollendung)
+    {0x99, 0x33, 0x99}, -- 13 Halbtöne (kleine None): Dunkelrosa (Spannung)
+    {0xFF, 0xFF, 0x66}, -- 14 Halbtöne (große None): Hellgelb (Öffnung)
+    {0x66, 0xCC, 0x66}, -- 15 Halbtöne (kleine Dezime): Hellgrün (Frische)
+    {0x00, 0x99, 0x33}, -- 16 Halbtöne (große Dezime): Dunkelgrün (Harmonie)
+    {0x66, 0x99, 0xFF}, -- 17 Halbtöne (reine Undezime): Himmelblau (Weite)
+    {0x00, 0x33, 0x99}, -- 18 Halbtöne (übermäßige Undezime): Tiefblau (Sehnsucht)
+    {0x99, 0x33, 0xCC}, -- 19 Halbtöne (Duodezime): Violett (Erhabenheit)
+    {0x66, 0x00, 0x99}, -- 20 Halbtöne (kleine Tredezime): Tiefviolett (Intensität)
+    {0x33, 0x00, 0x66}, -- 21 Halbtöne (große Tredezime): Dunkelviolett (Ausdruck)
+    {0x99, 0x66, 0x33}, -- 22 Halbtöne (kleine Quartdezime): Braun (Erdung)
+    {0xFF, 0x66, 0x00}, -- 23 Halbtöne (große Quartdezime): Orange (Wärme)
+    {0xCC, 0x33, 0x00}, -- 24 Halbtöne (Quindezime): Dunkelorange (Energie)
+}
+
+interval_colors["intuitive"] = {
+    {0xFF, 0xFF, 0xFF}, -- Weiß (Reinheit, Identität)
+    {0x80, 0x00, 0x00}, -- Dunkelrot (Spannung)
+    {0xFF, 0x80, 0x00}, -- Orange (Leichte Bewegung)
+    {0x80, 0x40, 0x00}, -- Braun (Melancholie)
+    {0xFF, 0xC0, 0x00}, -- Gold (Freude)
+    {0x00, 0x80, 0x00}, -- Grün (Aufbruch, Stabilität)
+    {0x00, 0x00, 0x00}, -- Schwarz (Spannung, Dissonanz)
+    {0x00, 0x80, 0x80}, -- Türkis (Harmonie)
+    {0x80, 0x00, 0x40}, -- Dunkelviolett (Sehnsucht)
+    {0xC0, 0xFF, 0x00}, -- Hellgrün (Wärme, Offenheit)
+    {0x80, 0x00, 0x80}, -- Violett (Spannung, Dramatik)
+    {0xFF, 0x00, 0xFF}, -- Magenta (Intensität)
+    {0xFF, 0xFF, 0xFF}, -- Weiß (Vollkommenheit)
+    {0x80, 0x00, 0x00}, -- Dunkelrot (wie kleine Sekunde)
+    {0xFF, 0x80, 0x00}, -- Orange (wie große Sekunde)
+    {0x80, 0x40, 0x00}, -- Braun (wie kleine Terz)
+    {0xFF, 0xC0, 0x00}, -- Gold (wie große Terz)
+    {0x00, 0x80, 0x00}, -- Grün (wie reine Quarte)
+    {0x00, 0x00, 0x00}, -- Schwarz (wie Tritonus)
+    {0x00, 0x80, 0x80}, -- Türkis (wie reine Quinte)
+    {0x80, 0x00, 0x40}, -- Dunkelviolett (wie kleine Sexte)
+    {0xC0, 0xFF, 0x00}, -- Hellgrün (wie große Sexte)
+    {0x80, 0x00, 0x80}, -- Violett (wie kleine Septime)
+    {0xFF, 0x00, 0xFF}, -- Magenta (wie große Septime)
+    {0xFF, 0xFF, 0xFF}, -- Weiß (wie Oktave)
+}
+
+interval_colors["contrast"] = {
+    {0x00, 0x00, 0x00},
+    {0xFF, 0x00, 0x00},
+    {0xFF, 0x80, 0x00},
+    {0xFF, 0xFF, 0x00},
+    {0x80, 0xFF, 0x00},
+    {0x00, 0xFF, 0x00},
+    {0x00, 0x80, 0x80},
+    {0x00, 0x00, 0xFF},
+    {0x80, 0x00, 0x80},
+    {0xFF, 0x00, 0xFF},
+    {0xFF, 0x00, 0x80},
+    {0xC0, 0xC0, 0xC0},
+    {0xFF, 0xFF, 0xFF},
+    {0xFF, 0x40, 0x40},
+    {0xFF, 0xA0, 0x40},
+    {0xFF, 0xFF, 0x80},
+    {0xA0, 0xFF, 0x40},
+    {0x40, 0xFF, 0xA0},
+    {0x40, 0xA0, 0xFF},
+    {0xA0, 0x40, 0xFF},
+    {0xFF, 0x40, 0xFF},
+    {0xFF, 0x80, 0xFF},
+    {0xFF, 0xC0, 0xFF},
+    {0xE0, 0xE0, 0xE0},
+    {0xFF, 0xFF, 0xFF}
+}
+
 octave_texts={}
 octave_texts["de"]="Oktave(n)"
 octave_texts["en"]="octave(s)"
@@ -423,13 +537,24 @@ end
 
 local function effect_text(language, interval, dialog_type)
     if dialog_type ~= DIALOG_CONDENSED then
-        return "-", "-"
+        return " ", " "
     end
     local function display_interval(delta)
         return (delta <= 12) and delta or interval.interval -- Additional intervals Ninth...Fifteenth
     end
     local i = display_interval(math.abs(interval.halftones)) + 1
     return effect_texts[language][i]
+end
+
+local function effect_color(language, interval, dialog_type)
+    if dialog_type == DIALOG_CONDENSED then
+        return nil
+    end
+    local function display_interval(delta)
+        return (delta <= 12) and delta or interval.interval -- Additional intervals Ninth...Fifteenth
+    end
+    local i = display_interval(math.abs(interval.halftones)) + 1
+    return interval_colors["classical"][i]
 end
 
 local function cents_text(properties, dialog_type)
@@ -475,13 +600,18 @@ local function update_interval(vb, data, settings, dialog_type)
                 end
                 if dissonance then
                     local dissonance_text, dissonance_color = dissonance_details(dissonance, settings, dialog_type)
-                    if     view_type == 1 or interval.chord then update_text (vb, view_id, dissonance_text )
+                    if     view_type == 1 or interval.chord then
+                        update_text (vb, view_id, dissonance_text )
                         update_color(vb, view_id, dissonance_color)
-                    elseif view_type == 2 then update_text (vb, view_id, interval_text(language, interval, dialog_type))
+                    elseif view_type == 2 then
+                        update_text (vb, view_id, interval_text(language, interval, dialog_type))
                         update_color(vb, view_id, dissonance_color)
-                    elseif view_type == 3 then update_text (vb, view_id, effect_text  (language, interval, dialog_type))
-                        update_color(vb, view_id, dissonance_color)
-                    elseif view_type == 4 then update_text (vb, view_id, cents_text   (properties, dialog_type))
+                    elseif view_type == 3 then
+                        update_text (vb, view_id, effect_text  (language, interval, dialog_type))
+                        local color = effect_color(language, interval, dialog_type)
+                        update_color(vb, view_id, color and color or effect_color(language, interval, dialog_type))
+                    elseif view_type == 4 then
+                        update_text (vb, view_id, cents_text   (properties, dialog_type))
                         update_color(vb, view_id, dissonance_color)
                     end
                 end

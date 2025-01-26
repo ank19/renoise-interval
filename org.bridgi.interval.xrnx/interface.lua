@@ -364,29 +364,6 @@ function create_dialog(vb, settings, data, dialog_type)
     local dialog_content       = vb:column { width = total_width, configuration_view, matrix_view }
     local index_width          = INDEX_WIDTH * (data.max_index / 3.5)
 
-    -- Add a status bar (Deprecated, TODO: Remove)
-    --[[ local bar_width = math.min(FULL_HD_WIDTH, total_width) - (display_chords and 0 or SEPARATOR_WIDTH + 2) + index_width
-     if data.status and data.status.status ~= STATUS_OK then
-        dialog_content:add_child(vb:row { width = bar_width,
-                                          vb:button { width  = bar_width,
-                                                      height = DEFAULT_MINI_CONTROL_HEIGHT,
-                                                      id     = ID_STATUS_BAR,
-                                                      color  = data.status.color,
-                                                      active = false,
-                                                      text   = "???" }})
-    end
-
-    -- Add a counterpoint bar
-    if data.counterpoint and data.counterpoint.code then
-        dialog_content:add_child(vb:row { width = bar_width,
-                                          vb:button { width  = bar_width,
-                                                      height = DEFAULT_MINI_CONTROL_HEIGHT,
-                                                      id     = ID_COUNTERPOINT_BAR,
-                                                      color  = COLOR_STATUS_WARNING,
-                                                      active = false,
-                                                      text   = "---" }})
-    end ]]--
-
     dialog_content:add_child(table_header(vb, data, per_column_width, display_chords, dialog_type, index_width))
     dialog_content:add_child(vb:row { height = 5, vb:space {}})
     for y = 1, row_count do

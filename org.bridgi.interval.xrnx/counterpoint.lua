@@ -35,7 +35,7 @@ function check_counterpoint(data)
     local empty     = {}
 
     local function leap_direction(n)
-        return n > 0 and 1 or n < 0 and -1 or false
+        return n > 0 and 1 or n < 0 and -1 or 0
     end
 
     for row = 1, row_count do
@@ -61,12 +61,13 @@ function check_counterpoint(data)
                 -- Leaps
                 local halftones = math.abs(t.halftones)
                 local is_leap   = halftones >= 7
-                local is_step   = halftones == 1 or halftones == 2
+                -- Note: Unison is considered as a step, too, as the the effect is similar to a small step
+                local is_step   = halftones == 1 or halftones == 2 or halftones == 0
                 local direction = leap_direction(t.halftones)
                 leap_up  [row] = (direction ==  1 and is_leap) and t or leap_up  [row]
                 leap_down[row] = (direction == -1 and is_leap) and t or leap_down[row]
-                step_up  [row] = (direction ==  1 and is_step) and t or step_up  [row]
-                step_down[row] = (direction == -1 and is_step) and t or step_down[row]
+                step_up  [row] = ((direction ==  1 or direction == 0) and is_step) and t or step_up  [row]
+                step_down[row] = ((direction == -1 or direction == 0) and is_step) and t or step_down[row]
 
                 -- Tritone
                 if t.interval == 6 then
